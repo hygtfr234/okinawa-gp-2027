@@ -1,0 +1,1546 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-Hant" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>GR63 // OKINAWA GP 2027 F1 遙測自駕系統</title>
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="GR63 沖繩GP" />
+  <meta name="theme-color" content="#090B0C" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,600;1,700&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js" defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#090B0C', carbon: '#121619', carbonLight: '#1A2025',
+            petronas: '#00D2BE', petronasDeep: '#008F82', silverArrow: '#D0D7DE',
+            volt: '#C8FF00', fiaRed: '#FF2A3B', sectorYellow: '#FFD100',
+            sectorPurple: '#B537F2', greenFlag: '#22C55E',
+          },
+          fontFamily: {
+            racing: ['"Chakra Petch"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['"Noto Sans TC"', 'Inter', 'sans-serif'],
+          },
+          boxShadow: {
+            tealGlow: '0 0 20px rgba(0,210,190,0.28)',
+            tealGlowSm: '0 0 12px rgba(0,210,190,0.22)',
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      background-color: #040506;
+      background-image: radial-gradient(circle at 50% 0%, rgba(0,210,190,0.08), transparent 45%), linear-gradient(180deg, #060809 0%, #030405 100%);
+    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .carbon-weave {
+      background-color: #121619;
+      background-image:
+        linear-gradient(45deg, rgba(255,255,255,0.028) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255,255,255,0.028) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(0,210,190,0.022) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.35) 75%);
+      background-size: 8px 8px;
+      background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+    }
+    .f1-panel {
+      background: rgba(18,22,25,0.84);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(0,210,190,0.22);
+      border-radius: 14px;
+    }
+    .f1-bevel-sm { clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 9px 100%, 0 calc(100% - 9px)); }
+    .rpm-led { height: 6px; border-radius: 9999px; background: #1B2126; border: 1px solid rgba(255,255,255,0.06); transition: all 0.25s; }
+    .rpm-led.lit-green { background: #22C55E; box-shadow: 0 0 8px #22C55E; border-color: #86EFAC; }
+    .rpm-led.lit-red { background: #FF2A3B; box-shadow: 0 0 8px #FF2A3B; border-color: #FCA5A5; }
+    .rpm-led.lit-blue { background: #00D2BE; box-shadow: 0 0 10px #00D2BE; border-color: #99F6E4; }
+    .telemetry-skeleton {
+      position: relative; overflow: hidden;
+      background: repeating-linear-gradient(0deg, rgba(0,210,190,0.04) 0 1px, transparent 1px 6px), radial-gradient(circle at 70% 50%, rgba(0,210,190,0.12), #090B0C 70%);
+    }
+    .telemetry-skeleton::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 25%, rgba(0,210,190,0.16) 48%, rgba(200,255,0,0.1) 52%, transparent 75%);
+      transform: translateX(-100%); animation: radarSweep 1.8s ease-in-out infinite;
+    }
+    @keyframes radarSweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    .wave-bar { width: 3px; border-radius: 9999px; background: #00D2BE; animation: radioWave 1.1s ease-in-out infinite; }
+    .wave-bar:nth-child(2n) { animation-delay: 0.18s; background: #C8FF00; }
+    .wave-bar:nth-child(3n) { animation-delay: 0.34s; background: #D0D7DE; }
+    @keyframes radioWave { 0%,100% { height: 5px; opacity: 0.45; } 50% { height: 18px; opacity: 1; } }
+    .gantry-light { width: 28px; height: 28px; border-radius: 9999px; background: radial-gradient(circle at 35% 35%, #2A1618, #0D0E10 75%); border: 2px solid #262C31; transition: all 0.3s; }
+    .gantry-light.red-on { background: radial-gradient(circle at 35% 35%, #FF9AA2, #FF2A3B 55%, #99000D 100%); border-color: #FF6B77; box-shadow: 0 0 16px rgba(255,42,59,0.9); }
+    .gantry-light.green-on { background: radial-gradient(circle at 35% 35%, #A7FFF6, #00D2BE 55%, #007A6E 100%); border-color: #79FFF2; box-shadow: 0 0 18px rgba(0,210,190,0.95); }
+    .drag-ghost { opacity: 0.35; border-color: #C8FF00 !important; }
+    .drag-chosen { border-color: #00D2BE !important; }
+    .safe-main-pb { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6.25rem); }
+    .safe-nav-pb { padding-bottom: env(safe-area-inset-bottom, 0px); }
+    @keyframes dotPulse { 0% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(2.4); opacity: 0; } }
+    .sector-pulse-ring { transform-box: fill-box; transform-origin: center; animation: dotPulse 1.6s ease-out infinite; }
+  </style>
+</head>
+<body class="text-white font-sans antialiased selection:bg-petronas selection:text-obsidian overflow-x-hidden">
+  <div class="relative mx-auto w-full max-w-[480px] min-h-screen bg-obsidian sm:border-x sm:border-[#1E262C] sm:shadow-[0_0_80px_rgba(0,0,0,0.95)] flex flex-col">
+
+    <!-- 頂部：15-LED 換檔燈條 + 狀態列 -->
+    <header class="sticky top-0 z-40 bg-obsidian/92 backdrop-blur-md border-b border-petronas/25">
+      <div class="px-3 pt-2 pb-1.5 bg-[#07090A]">
+        <div id="rpm-led-bar" class="gap-1 items-center" style="display:grid;grid-template-columns:repeat(15,minmax(0,1fr));"></div>
+      </div>
+      <div class="px-3.5 py-2 flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <div class="w-7 h-7 flex-shrink-0 flex items-center justify-center rounded-full bg-[#101518] border border-silverArrow/30">
+            <svg viewBox="0 0 64 64" class="w-5 h-5">
+              <defs><linearGradient id="starChrome" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FFF"/><stop offset="100%" stop-color="#5B6570"/></linearGradient></defs>
+              <circle cx="32" cy="32" r="28" fill="none" stroke="url(#starChrome)" stroke-width="3"/>
+              <polygon points="32,6 35.5,29 32,32" fill="#FFF"/><polygon points="32,6 28.5,29 32,32" fill="#8B96A3"/>
+              <polygon points="54.5,45 35.5,29 32,32" fill="#9AA5B2"/><polygon points="54.5,45 32,36 32,32" fill="#F1F5F9"/>
+              <polygon points="9.5,45 32,36 32,32" fill="#717D8A"/><polygon points="9.5,45 28.5,29 32,32" fill="#E2E8F0"/>
+            </svg>
+          </div>
+          <div class="min-w-0 leading-tight">
+            <div class="flex items-center gap-1.5">
+              <span class="font-racing italic font-bold text-xs tracking-wider text-petronas">#63</span>
+              <span class="font-racing font-bold text-xs tracking-wider text-white truncate">OKINAWA GP 2027</span>
+            </div>
+            <div class="font-mono text-[9px] text-silverArrow/70 tracking-wider truncate">MERCEDES-AMG PETRONAS // SELF-DRIVE</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <button id="header-sync-pill" onclick="openCloudSyncModal()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-carbon hover:bg-petronas/20 border border-petronas/40 transition active:scale-95">
+            <span id="header-sync-dot" class="w-1.5 h-1.5 rounded-full bg-petronas animate-pulse"></span>
+            <span id="header-sync-label" class="font-mono text-[9px] font-bold text-petronas">SYNC</span>
+          </button>
+          <button onclick="openVisualStudio()" class="px-2 py-1 rounded-lg bg-carbonLight hover:bg-petronas/20 border border-silverArrow/25 text-[10px] text-silverArrow hover:text-petronas active:scale-95">素材</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- HERO F1 車庫橫幅 -->
+    <section class="px-3.5 pt-3">
+      <div class="relative w-full h-[210px] rounded-2xl overflow-hidden border border-petronas/35 shadow-[0_14px_40px_rgba(0,0,0,0.85)] bg-obsidian">
+        <div id="hero-car-skeleton" class="telemetry-skeleton absolute inset-0 flex items-end justify-end p-3 z-10 transition-opacity duration-500">
+          <div class="flex items-center gap-2 bg-obsidian/80 border border-petronas/40 rounded-lg px-2.5 py-1">
+            <span class="w-2 h-2 rounded-full bg-petronas animate-ping"></span>
+            <span id="hero-car-status" class="font-mono text-[10px] text-petronas">HUD STANDBY // 點「素材」上傳圖片</span>
+          </div>
+        </div>
+        <img id="hero-car-img" alt="F1 Garage" class="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-700" />
+        <div class="absolute inset-0 z-10 pointer-events-none" style="background:linear-gradient(90deg,rgba(9,11,12,.92) 0%,rgba(9,11,12,.55) 48%,rgba(9,11,12,.18) 100%),linear-gradient(0deg,rgba(9,11,12,.96) 0%,rgba(9,11,12,.28) 45%,rgba(9,11,12,.32) 100%);"></div>
+        <div class="absolute top-0 left-0 right-0 h-[2px] z-20 bg-gradient-to-r from-petronas via-volt/70 to-transparent"></div>
+        <div class="relative z-20 h-full p-3.5 flex flex-col justify-between">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-3 min-w-0">
+              <button onclick="openVisualStudio()" class="relative w-[60px] h-[60px] flex-shrink-0 f1-bevel-sm p-[1.5px] bg-gradient-to-br from-petronas via-volt/60 to-silverArrow/40 shadow-tealGlowSm active:scale-95">
+                <div class="relative w-full h-full f1-bevel-sm bg-obsidian overflow-hidden">
+                  <div class="gr63-helmet-skeleton telemetry-skeleton absolute inset-0 flex items-center justify-center z-10"><span class="font-mono text-[8px] text-petronas font-bold">GR63</span></div>
+                  <img class="gr63-helmet-img absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-700" alt="GR63" />
+                </div>
+              </button>
+              <div class="min-w-0">
+                <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-petronas/15 border border-petronas/40 mb-1">
+                  <span class="font-racing italic font-bold text-[10px] text-petronas">DRIVER #63</span>
+                  <span class="text-silverArrow/40 text-[9px]">|</span>
+                  <span class="font-racing text-[9px] font-bold text-volt">GEORGE RUSSELL EDITION</span>
+                </div>
+                <h1 class="font-racing italic font-bold text-2xl leading-none tracking-wide text-white">OKINAWA <span class="text-petronas">GP</span> 2027</h1>
+                <p class="text-[11px] text-silverArrow/85 mt-1">2027.01 五天四夜沖繩自駕遙測系統</p>
+              </div>
+            </div>
+            <button onclick="openCloudSyncModal()" class="flex-shrink-0 bg-obsidian/70 hover:bg-petronas/20 border border-petronas/40 rounded-lg px-2 py-1 text-[10px] font-mono text-petronas active:scale-95">旅伴同步</button>
+          </div>
+          <div class="flex items-end justify-between gap-2">
+            <div class="flex items-center gap-1.5 bg-obsidian/80 border border-petronas/35 rounded-lg px-2.5 py-1">
+              <span class="font-mono text-[9px] text-silverArrow/70">NAHA</span>
+              <span id="hero-temp" class="font-mono font-bold text-xs text-white">--°C</span>
+              <span class="text-petronas/40">|</span>
+              <span id="hero-wind" class="font-mono font-bold text-xs text-petronas">-- m/s</span>
+              <span class="text-petronas/40">|</span>
+              <span class="font-mono text-[9px] text-silverArrow/70">JPY</span>
+              <span id="hero-fx" class="font-mono font-bold text-xs text-volt">0.215</span>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div id="hero-active-tag" class="font-racing italic font-bold text-xs text-petronas tracking-widest">LAP 01 / 05</div>
+              <div class="font-mono text-[9px] text-silverArrow/65">CARPLAY READY</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 四大主畫面 -->
+    <main class="flex-1 px-3.5 pt-3.5 safe-main-pb space-y-3.5">
+
+      <!-- M1 TIMING -->
+      <section id="panel-timing" class="mode-panel space-y-3.5">
+        <div id="lap-pills" class="flex gap-2 overflow-x-auto no-scrollbar pb-1"></div>
+
+        <!-- 沖繩三賽段地圖 -->
+        <div class="f1-panel carbon-weave p-3.5">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2"><span class="w-1 h-4 bg-petronas rounded-full"></span><h2 class="font-racing italic font-bold text-xs tracking-widest text-white">OKINAWA CIRCUIT <span class="text-petronas">// SECTOR</span></h2></div>
+            <span id="circuit-sector-badge" class="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-sectorYellow/15 text-sectorYellow border border-sectorYellow/40">SECTOR 1</span>
+          </div>
+          <div class="grid grid-cols-12 gap-3 items-center">
+            <div class="col-span-5 bg-obsidian/85 border border-white/10 rounded-xl p-2 flex items-center justify-center">
+              <svg viewBox="0 0 120 155" class="w-full h-[112px]">
+                <path d="M0 38 H120 M0 78 H120 M0 118 H120 M40 0 V155 M80 0 V155" stroke="rgba(255,255,255,0.05)" stroke-width="0.6"/>
+                <path d="M28 140 C38 138, 42 126, 40 112 C38 98, 52 92, 58 78 C64 64, 72 56, 78 44 C85 32, 96 22, 98 14 C86 16, 74 26, 68 38" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="7" stroke-linecap="round"/>
+                <path id="track-s1" d="M28 140 C38 138, 42 126, 40 112 C39 104, 44 98, 50 93" fill="none" stroke="#FFD100" stroke-width="3.5" stroke-linecap="round"/>
+                <path id="track-s2" d="M50 93 C54 88, 56 83, 58 78 C62 68, 68 61, 74 52" fill="none" stroke="#00D2BE" stroke-width="3.5" stroke-linecap="round"/>
+                <path id="track-s3" d="M74 52 C78 45, 86 30, 98 14 C88 18, 76 28, 70 37" fill="none" stroke="#B537F2" stroke-width="3.5" stroke-linecap="round"/>
+                <text x="12" y="144" fill="#FFD100" font-family="JetBrains Mono" font-size="7" font-weight="700">S1</text>
+                <text x="65" y="83" fill="#00D2BE" font-family="JetBrains Mono" font-size="7" font-weight="700">S2</text>
+                <text x="58" y="18" fill="#B537F2" font-family="JetBrains Mono" font-size="7" font-weight="700">S3</text>
+                <g id="circuit-gr63-dot" transform="translate(36, 124)" style="transition:transform 0.6s;">
+                  <circle r="7" fill="#00D2BE" class="sector-pulse-ring"/>
+                  <circle r="4.5" fill="#090B0C" stroke="#00D2BE" stroke-width="2"/>
+                  <rect x="7" y="-8" width="24" height="12" rx="3" fill="#00D2BE"/>
+                  <text x="19" y="0.5" text-anchor="middle" fill="#090B0C" font-family="Chakra Petch" font-size="7.5" font-weight="700">#63</text>
+                </g>
+              </svg>
+            </div>
+            <div class="col-span-7 space-y-2">
+              <div>
+                <div class="flex items-center justify-between gap-1">
+                  <span id="lap-code-sub" class="font-mono text-[10px] text-petronas">LAP 01</span>
+                  <span id="route-engine-badge" class="font-mono text-[8px] px-1.5 py-0.5 rounded bg-obsidian border border-petronas/30 text-petronas">OSRM READY</span>
+                </div>
+                <h3 id="lap-full-title" class="font-racing font-bold text-base text-white leading-snug mt-0.5">--</h3>
+              </div>
+              <div class="grid grid-cols-2 gap-1.5 text-center">
+                <div class="bg-obsidian/85 border border-white/10 rounded-lg py-1.5"><div class="font-mono text-[9px] text-silverArrow/60">STOPS</div><div id="lap-stop-count" class="font-mono font-bold text-sm">4</div></div>
+                <div class="bg-obsidian/85 border border-white/10 rounded-lg py-1.5"><div class="font-mono text-[9px] text-silverArrow/60">EST. DRIVE</div><div id="lap-drive-total" class="font-mono font-bold text-sm text-petronas">50m</div></div>
+              </div>
+              <div class="flex items-center justify-between text-[10px] font-mono text-silverArrow/70">
+                <span>S1南 / S2中 / S3北</span>
+                <button onclick="recalcLapWithOSRM(true)" class="text-petronas hover:underline">↻ OSRM重算</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 一鍵全線 CarPlay -->
+        <a id="btn-carplay-route" href="#" target="_blank" rel="noopener noreferrer"
+           class="f1-bevel-sm w-full flex items-center justify-center gap-2 bg-gradient-to-r from-petronas via-[#1EE5D1] to-petronas text-obsidian font-bold py-3.5 px-4 shadow-tealGlow active:scale-[0.99] transition text-sm">
+          <span>🗺️ 一鍵匯入當日全線至 Google Maps (CarPlay)</span>
+        </a>
+
+        <!-- 當下 GPS 周邊搜雷達 -->
+        <div class="f1-panel p-2.5 space-y-2">
+          <div class="flex items-center justify-between px-0.5">
+            <span class="font-racing italic font-bold text-[11px] tracking-widest text-white">📡 NEARBY RADAR // 當下 GPS 周邊搜</span>
+            <span class="font-mono text-[9px] text-silverArrow/60">一鍵直跳</span>
+          </div>
+          <div class="grid grid-cols-4 gap-1.5">
+            <button onclick="nearbySearchFromGPS('restaurant')" class="flex flex-col items-center py-2 rounded-xl bg-obsidian hover:bg-petronas/15 border border-white/10 text-[10px] active:scale-95"><span>🍜</span><span>高分餐廳</span></button>
+            <button onclick="nearbySearchFromGPS('tabelog')" class="flex flex-col items-center py-2 rounded-xl bg-obsidian hover:bg-sectorYellow/15 border border-white/10 text-[10px] text-sectorYellow active:scale-95"><span>🍽️</span><span>Tabelog</span></button>
+            <button onclick="nearbySearchFromGPS('conv')" class="flex flex-col items-center py-2 rounded-xl bg-obsidian hover:bg-petronas/15 border border-white/10 text-[10px] active:scale-95"><span>🏪</span><span>超商補給</span></button>
+            <button onclick="nearbySearchFromGPS('parking')" class="flex flex-col items-center py-2 rounded-xl bg-obsidian hover:bg-petronas/15 border border-white/10 text-[10px] text-petronas active:scale-95"><span>🅿️</span><span>停車場</span></button>
+          </div>
+        </div>
+
+        <!-- 計時塔標題與按鈕 -->
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5">
+            <span class="font-racing italic font-bold text-xs tracking-widest text-silverArrow">TIMING TOWER</span>
+            <span class="text-[10px] font-mono text-petronas bg-petronas/10 border border-petronas/30 px-1.5 py-0.5 rounded">拖曳 ≡ 自動算時</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button onclick="resetCurrentLapDefault()" class="text-[10px] font-mono text-silverArrow bg-carbon border border-white/15 rounded-lg px-2 py-1.5 active:scale-95">↺ 重設</button>
+            <button onclick="openAddStopModal('lap')" class="text-xs font-bold text-petronas bg-petronas/10 border border-petronas/40 rounded-lg px-2.5 py-1.5 active:scale-95">+ 新增景點</button>
+          </div>
+        </div>
+
+        <div id="timing-tower-list" class="space-y-3"></div>
+
+        <!-- 候補與雨備口袋名單 -->
+        <div class="f1-panel carbon-weave overflow-hidden border-volt/30">
+          <button onclick="togglePocketDrawer()" class="w-full px-3.5 py-3 flex items-center justify-between gap-2 hover:bg-white/5">
+            <div class="flex items-center gap-2 text-left">
+              <span class="w-1 h-4 bg-volt rounded-full"></span>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-racing italic font-bold text-xs text-white">PIT GARAGE // 候補與雨備口袋名單</span>
+                  <span id="pocket-count-badge" class="font-mono text-[10px] font-bold bg-volt/15 text-volt border border-volt/40 px-1.5 rounded">6</span>
+                </div>
+                <div class="text-[10px] text-silverArrow/70">遇下雨、排隊或空檔，一鍵排入或替換本日行程</div>
+              </div>
+            </div>
+            <span id="pocket-chevron" class="font-mono text-xs text-volt transition-transform">▼</span>
+          </button>
+          <div id="pocket-drawer-body" class="hidden border-t border-white/10 p-3.5 space-y-3">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex gap-1.5">
+                <button onclick="setPocketFilter('ALL')" data-pf="ALL" class="pocket-filter-btn px-2 py-1 rounded-lg text-[10px] font-bold bg-petronas/20 border border-petronas/50 text-petronas">全部</button>
+                <button onclick="setPocketFilter('RAIN')" data-pf="RAIN" class="pocket-filter-btn px-2 py-1 rounded-lg text-[10px] font-bold bg-obsidian border border-white/15 text-silverArrow">☔ 雨備</button>
+                <button onclick="setPocketFilter('FOOD')" data-pf="FOOD" class="pocket-filter-btn px-2 py-1 rounded-lg text-[10px] font-bold bg-obsidian border border-white/15 text-silverArrow">🍜 美食</button>
+              </div>
+              <button onclick="openAddStopModal('pocket')" class="text-[11px] font-bold text-volt bg-volt/10 border border-volt/40 rounded-lg px-2 py-1">+ 新增候補</button>
+            </div>
+            <div id="pocket-list" class="space-y-2"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- M2 TELEMETRY -->
+      <section id="panel-telemetry" class="mode-panel hidden space-y-3.5">
+        <div class="f1-panel p-3 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span id="net-status-dot" class="w-2.5 h-2.5 rounded-full bg-greenFlag animate-pulse"></span>
+            <div class="min-w-0">
+              <span id="net-status-badge" class="font-racing font-bold text-xs text-greenFlag">LIVE SYNC</span>
+              <div class="font-mono text-[10px] text-silverArrow/75">LAST SYNC: <span id="net-last-sync">--:--:--</span></div>
+            </div>
+          </div>
+          <button onclick="forceTelemetrySync()" class="bg-petronas/15 border border-petronas/50 text-petronas font-racing font-bold text-xs px-3 py-2 rounded-lg active:scale-95">
+            <span id="force-sync-icon" class="inline-block">↻</span> FORCE SYNC
+          </button>
+        </div>
+
+        <!-- 氣候與羅盤 -->
+        <div class="f1-panel carbon-weave p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="font-racing italic font-bold text-sm text-white">TRACK WEATHER // 那霸即時氣候</h2>
+            <span id="weather-source-tag" class="font-mono text-[10px] px-2 py-0.5 rounded bg-obsidian border border-petronas/30 text-petronas">OPEN-METEO</span>
+          </div>
+          <div class="grid grid-cols-12 gap-3 items-center">
+            <div class="col-span-5 bg-obsidian/90 border border-white/10 rounded-xl p-2 flex flex-col items-center">
+              <svg viewBox="0 0 120 120" class="w-[100px] h-[100px]">
+                <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(208,215,222,0.16)" stroke-width="1.5"/>
+                <circle cx="60" cy="60" r="42" fill="none" stroke="rgba(0,210,190,0.22)" stroke-dasharray="3 4"/>
+                <text x="60" y="18" text-anchor="middle" fill="#00D2BE" font-family="Chakra Petch" font-size="10" font-weight="700">N</text>
+                <text x="104" y="63" text-anchor="middle" fill="#D0D7DE" font-family="Chakra Petch" font-size="9">E</text>
+                <text x="60" y="109" text-anchor="middle" fill="#D0D7DE" font-family="Chakra Petch" font-size="9">S</text>
+                <text x="16" y="63" text-anchor="middle" fill="#D0D7DE" font-family="Chakra Petch" font-size="9">W</text>
+                <g id="wind-compass-needle" transform="rotate(45 60 60)" style="transition:transform 0.8s;">
+                  <polygon points="60,22 66,58 60,52 54,58" fill="#00D2BE"/>
+                  <polygon points="60,96 64,62 60,67 56,62" fill="#475569"/>
+                  <circle cx="60" cy="60" r="5" fill="#090B0C" stroke="#C8FF00" stroke-width="2"/>
+                </g>
+              </svg>
+              <div class="font-mono text-[10px] text-petronas font-bold"><span id="w-wind-dir-label">NE</span> (<span id="w-wind-deg">45°</span>)</div>
+            </div>
+            <div class="col-span-7 grid grid-cols-2 gap-2">
+              <div class="bg-obsidian/90 border border-white/10 rounded-xl p-2.5"><div class="font-mono text-[9px] text-silverArrow/60">TEMP</div><div id="w-temp" class="font-mono font-bold text-xl">--°C</div><div class="font-mono text-[10px] text-silverArrow/70">體感 <span id="w-feels">--°</span></div></div>
+              <div class="bg-petronas/10 border border-petronas/40 rounded-xl p-2.5"><div class="font-mono text-[9px] text-petronas">WIND</div><div id="w-wind-ms" class="font-mono font-bold text-xl text-petronas">--</div><div id="w-wind-kmh" class="font-mono text-[10px] text-petronas/80">-- km/h</div></div>
+              <div class="bg-obsidian/90 border border-white/10 rounded-xl p-2.5"><div class="font-mono text-[9px] text-silverArrow/60">RAIN</div><div id="w-rain" class="font-mono font-bold text-lg">--%</div><div id="w-condition" class="text-[10px] text-silverArrow/70 truncate">載入中</div></div>
+              <div class="bg-obsidian/90 border border-white/10 rounded-xl p-2.5"><div class="font-mono text-[9px] text-silverArrow/60">RANGE</div><div id="w-range" class="font-mono font-bold text-base text-volt mt-1">--/--°</div><div class="text-[10px] text-silverArrow/65">那霸市區</div></div>
+            </div>
+          </div>
+          <div id="pit-advice-box" class="bg-obsidian/95 border-l-4 border-l-petronas border border-white/10 rounded-xl p-3 flex items-start gap-2">
+            <span id="pit-advice-dot" class="mt-1 w-2.5 h-2.5 rounded-full bg-petronas flex-shrink-0"></span>
+            <div class="text-xs leading-relaxed"><span class="font-racing italic font-bold text-petronas mr-1">PIT ADVICE:</span><span id="pit-advice-text" class="text-silverArrow">分析中...</span></div>
+          </div>
+          <div id="weather-5day-grid" class="grid grid-cols-5 gap-1.5"></div>
+        </div>
+
+        <!-- 雙向匯率 -->
+        <div class="f1-panel carbon-weave p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="font-racing italic font-bold text-sm text-white">FX TELEMETRY // 雙向即時匯率</h2>
+            <span id="fx-source-tag" class="font-mono text-[10px] text-volt bg-obsidian border border-volt/30 px-2 py-0.5 rounded">ER-API LIVE</span>
+          </div>
+          <div class="flex items-center justify-between bg-obsidian/90 border border-white/10 rounded-xl px-3 py-2 text-xs">
+            <div class="flex items-center gap-2 text-silverArrow">
+              <span class="font-mono">1 JPY =</span>
+              <input id="fx-rate-input" type="number" step="0.0001" min="0.01" oninput="onFxRateManualEdit()" class="w-20 bg-carbonLight border border-petronas/40 rounded-md px-2 py-1 font-mono font-bold text-petronas text-center" />
+              <span class="font-mono">TWD</span>
+            </div>
+            <button onclick="resetFxToLive()" class="font-mono text-[10px] text-silverArrow/70 hover:text-petronas underline">重抓即時</button>
+          </div>
+          <div class="grid grid-cols-1 gap-2">
+            <div class="bg-obsidian/95 border border-white/15 rounded-xl px-3.5 py-2">
+              <div class="flex justify-between text-[10px] font-mono text-silverArrow/70"><span>JPY ¥</span><button onclick="setQuickJpy(0)">CLEAR</button></div>
+              <div class="flex items-center gap-2"><span class="font-mono text-2xl font-bold text-petronas">¥</span><input id="calc-jpy" type="number" inputmode="decimal" placeholder="0" oninput="convertFromJpy()" class="w-full bg-transparent font-mono text-2xl font-bold text-white focus:outline-none" /></div>
+            </div>
+            <div class="bg-obsidian/95 border border-white/15 rounded-xl px-3.5 py-2">
+              <div class="flex justify-between text-[10px] font-mono text-volt/80"><span>TWD NT$</span><span>雙向即時換算 ⇅</span></div>
+              <div class="flex items-center gap-2"><span class="font-mono text-xl font-bold text-volt">NT$</span><input id="calc-twd" type="number" inputmode="decimal" placeholder="0" oninput="convertFromTwd()" class="w-full bg-transparent font-mono text-2xl font-bold text-volt focus:outline-none" /></div>
+            </div>
+          </div>
+          <div class="grid grid-cols-4 gap-2">
+            <button onclick="setQuickJpy(1000)" class="py-2 bg-carbonLight border border-white/10 rounded-xl font-mono text-xs active:scale-95">¥1,000</button>
+            <button onclick="setQuickJpy(5500)" class="py-1.5 bg-petronas/15 border border-petronas/60 rounded-xl font-mono text-xs text-petronas font-bold leading-tight active:scale-95">¥5,500<span class="block text-[9px] font-sans font-normal">退稅門檻</span></button>
+            <button onclick="setQuickJpy(10000)" class="py-2 bg-carbonLight border border-white/10 rounded-xl font-mono text-xs active:scale-95">¥10,000</button>
+            <button onclick="setQuickJpy(30000)" class="py-2 bg-carbonLight border border-white/10 rounded-xl font-mono text-xs active:scale-95">¥30,000</button>
+          </div>
+        </div>
+
+        <!-- 記帳總覽與退稅 -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="f1-panel p-3.5"><div class="font-mono text-[9px] text-silverArrow/65">TOTAL BUDGET</div><div id="exp-total-jpy" class="font-mono font-bold text-lg mt-1">¥0</div><div id="exp-total-twd" class="font-mono text-xs text-silverArrow">≈ NT$ 0</div></div>
+          <div class="f1-panel p-3.5 border-petronas/45 bg-petronas/10"><div class="flex justify-between"><span class="font-mono text-[9px] text-petronas font-bold">TAX-FREE</span><span id="exp-tax-count" class="font-mono text-[10px] font-bold bg-petronas text-obsidian px-1.5 rounded">0 筆</span></div><div id="exp-tax-jpy" class="font-mono font-bold text-lg text-petronas mt-1">¥0</div><div id="exp-tax-twd" class="font-mono text-[10px] text-petronas/80">≈ NT$ 0</div></div>
+        </div>
+
+        <!-- 共同分帳記帳 -->
+        <div class="f1-panel carbon-weave p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-racing italic font-bold text-xs text-white">EXPENSE LOG // 共同分帳記帳</h3>
+            <div class="flex gap-2">
+              <button onclick="editCompanionsPrompt()" class="text-[10px] font-mono text-volt hover:underline">管理旅伴</button>
+              <button onclick="bringCalcToExpense()" class="text-[11px] text-petronas hover:underline">帶入日圓 ↓</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-6 gap-2">
+            <input id="exp-item-name" type="text" placeholder="品項（燒肉/驚安殿堂）" class="col-span-4 bg-obsidian border border-white/15 rounded-xl px-3 py-2 text-xs text-white focus:border-petronas focus:outline-none" />
+            <input id="exp-item-jpy" type="number" inputmode="decimal" placeholder="日圓 ¥" class="col-span-2 bg-obsidian border border-white/15 rounded-xl px-2.5 py-2 text-xs font-mono text-white focus:border-petronas focus:outline-none" />
+          </div>
+          <div class="grid grid-cols-12 gap-2 items-center">
+            <div class="col-span-5 flex items-center gap-1 bg-obsidian border border-white/15 rounded-xl px-2 py-2">
+              <span class="font-mono text-[9px] text-silverArrow/65">付款</span>
+              <select id="exp-item-payer" class="w-full bg-transparent text-xs text-petronas font-bold focus:outline-none"></select>
+            </div>
+            <label class="col-span-4 flex items-center gap-1.5 cursor-pointer select-none">
+              <input id="exp-item-taxfree" type="checkbox" class="w-4 h-4 accent-[#00D2BE]" />
+              <span class="text-[11px] text-silverArrow">退稅標記</span>
+            </label>
+            <button onclick="addExpenseItem()" class="col-span-3 bg-petronas text-obsidian font-bold text-xs py-2 rounded-xl active:scale-95">+ 記帳</button>
+          </div>
+          <div id="split-bill-box" class="hidden bg-obsidian/90 border border-volt/30 rounded-xl p-3 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-racing italic font-bold text-[11px] text-volt">CREW SPLIT // 旅伴均攤結算</span>
+              <span id="split-per-person" class="font-mono text-[10px] text-silverArrow"></span>
+            </div>
+            <div id="split-details" class="text-[11px] font-mono text-silverArrow space-y-1"></div>
+          </div>
+          <div id="expense-list" class="space-y-2 pt-2 border-t border-white/10"></div>
+        </div>
+      </section>
+
+      <!-- M3 PIT WALL -->
+      <section id="panel-pitwall" class="mode-panel hidden space-y-3.5">
+        <div class="f1-panel carbon-weave p-4 space-y-3">
+          <div class="flex items-center justify-between"><h2 class="font-racing italic font-bold text-sm text-white">CARPLAY INSTANT LAUNCHER</h2><span class="font-mono text-[10px] text-petronas bg-petronas/10 border border-petronas/35 px-2 py-0.5 rounded">DIRECT NAV</span></div>
+          <input id="pit-quick-dest" type="text" placeholder="輸入臨時店名、加油站或地址（例：A&W 牧港店）" class="w-full bg-obsidian border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white focus:border-petronas focus:outline-none" />
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="launchInstantNav('google')" class="col-span-2 bg-petronas text-obsidian font-bold py-2.5 rounded-xl text-xs shadow-tealGlowSm active:scale-95">🚗 Google Maps 駕駛模式</button>
+            <button onclick="launchInstantNav('apple')" class="col-span-1 bg-obsidian border border-white/20 text-silverArrow font-bold py-2.5 rounded-xl text-xs active:scale-95">Apple Maps</button>
+          </div>
+        </div>
+
+        <div class="f1-panel carbon-weave p-4 space-y-3">
+          <div class="flex items-center justify-between"><h2 class="font-racing italic font-bold text-sm text-white">PARC FERMÉ // 停車定位</h2><span class="font-mono text-[10px] text-silverArrow/70">GPS + 樓層</span></div>
+          <div class="grid grid-cols-5 gap-2">
+            <input id="park-zone-input" type="text" placeholder="車格 (3F-B12)" class="col-span-2 bg-obsidian border border-white/15 rounded-xl px-2.5 py-2 text-xs font-mono text-white focus:border-petronas focus:outline-none" />
+            <input id="park-memo-input" type="text" placeholder="備忘（例：Outlet 南口）" class="col-span-3 bg-obsidian border border-white/15 rounded-xl px-2.5 py-2 text-xs text-white focus:border-petronas focus:outline-none" />
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="saveParkingPin(true)" class="bg-petronas/15 border border-petronas/50 text-petronas font-bold py-2.5 rounded-xl text-xs active:scale-95">📍 GPS 鎖定車位</button>
+            <button onclick="saveParkingPin(false)" class="bg-obsidian border border-white/15 text-silverArrow py-2.5 rounded-xl text-xs active:scale-95">僅存車格備忘</button>
+          </div>
+          <div id="parking-pin-card" class="hidden bg-obsidian/95 border border-petronas/45 rounded-xl p-3 space-y-2">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="font-mono text-[10px] text-petronas">LOCKED // <span id="park-display-time">--</span></div>
+                <div class="flex items-center gap-2 mt-1"><span id="park-display-zone" class="font-mono font-bold text-xs px-2 py-0.5 rounded bg-volt/15 text-volt border border-volt/40">--</span><span id="park-display-memo" class="text-xs font-bold">--</span></div>
+                <div id="park-display-coords" class="font-mono text-[10px] text-silverArrow/70 mt-1"></div>
+              </div>
+              <button onclick="clearParkingPin()" class="text-[11px] text-silverArrow hover:text-fiaRed bg-carbon px-2 py-1 rounded">清除</button>
+            </div>
+            <a id="park-walk-link" href="#" target="_blank" rel="noopener noreferrer" class="block text-center bg-petronas text-obsidian font-bold text-xs py-2.5 rounded-xl">🚶 Google Maps 步行回停車處</a>
+          </div>
+        </div>
+
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between px-0.5"><h2 class="font-racing italic font-bold text-sm text-white">GR63 TEAM RADIO // 日文大字卡</h2><span class="font-mono text-[10px] text-petronas">點擊全螢幕出示 ↗</span></div>
+          <div id="team-radio-list" class="space-y-2"></div>
+          <div class="f1-panel carbon-weave border-fiaRed/40 p-3.5 space-y-3">
+            <button onclick="openTeamRadioModal('safety')" class="w-full text-left flex items-center justify-between">
+              <div><div class="font-racing italic font-bold text-xs text-fiaRed">SAFETY CAR // 車禍緊急求救大字卡 ↗</div><div class="text-[11px] text-silverArrow/80">點擊全螢幕出示求助日文</div></div>
+              <span class="font-mono text-xs text-fiaRed">OPEN</span>
+            </button>
+            <div class="grid grid-cols-2 gap-2">
+              <a href="tel:110" class="bg-obsidian border border-fiaRed/40 rounded-xl p-2.5 flex justify-between items-center"><div><div class="font-mono font-bold text-lg text-fiaRed leading-none">110</div><div class="text-[10px] text-silverArrow mt-1">警察</div></div><span class="font-mono text-xs text-fiaRed">CALL</span></a>
+              <a href="tel:119" class="bg-obsidian border border-sectorYellow/40 rounded-xl p-2.5 flex justify-between items-center"><div><div class="font-mono font-bold text-lg text-sectorYellow leading-none">119</div><div class="text-[10px] text-silverArrow mt-1">救護車</div></div><span class="font-mono text-xs text-sectorYellow">CALL</span></a>
+            </div>
+            <div class="bg-obsidian/90 border border-white/10 rounded-xl p-3 space-y-2">
+              <div class="flex justify-between"><span class="font-mono text-[10px] text-petronas">RENTAL EMERGENCY // 租車救援</span><button id="btn-edit-rental-tel" onclick="toggleRentalTelEdit()" class="font-mono text-[10px] text-petronas">編輯</button></div>
+              <div id="rental-tel-view" class="flex items-center justify-between gap-2">
+                <div class="min-w-0"><div id="rental-tel-name" class="text-xs font-bold truncate">--</div><div id="rental-tel-num" class="font-mono text-xs text-petronas">--</div></div>
+                <div class="flex gap-1.5"><button onclick="copyText(state.rentalEmergency.phone,'已複製電話')" class="px-2 py-1 text-[11px] bg-carbonLight border border-white/15 rounded-lg">複製</button><a id="rental-tel-call" href="#" class="px-2 py-1 text-[11px] bg-petronas/20 border border-petronas/50 rounded-lg text-petronas font-bold">撥打</a></div>
+              </div>
+              <div id="rental-tel-edit" class="hidden space-y-2">
+                <input id="input-rental-name" type="text" class="w-full bg-carbon border border-white/15 rounded-lg px-2.5 py-2 text-xs text-white" />
+                <input id="input-rental-phone" type="text" class="w-full bg-carbon border border-white/15 rounded-lg px-2.5 py-2 text-xs font-mono text-white" />
+                <button onclick="saveRentalTel()" class="w-full bg-petronas text-obsidian font-bold text-xs py-2 rounded-lg">儲存</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- M4 STEWARD -->
+      <section id="panel-steward" class="mode-panel hidden space-y-3.5">
+        <div class="f1-panel carbon-weave overflow-hidden border-petronas/35">
+          <div id="steward-flag-banner" class="px-4 py-3 bg-sectorYellow/15 border-b border-sectorYellow/40 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2"><span id="steward-flag-dot" class="w-3 h-3 rounded-full bg-sectorYellow animate-pulse"></span><div><div id="steward-flag-title" class="font-racing italic font-bold text-xs text-sectorYellow">YELLOW FLAG // HOLD LUGGAGE</div><div id="steward-flag-sub" class="text-[11px] text-white/90">切勿先託運行李！請先完成 2026/11 新制退稅查驗</div></div></div>
+            <span id="steward-progress-pill" class="font-mono text-xs font-bold text-sectorYellow bg-obsidian/80 px-2 py-1 rounded-lg">0/5</span>
+          </div>
+          <div class="px-4 pt-3 pb-3">
+            <div class="bg-[#0B0E11] border border-white/10 rounded-2xl p-3">
+              <div class="flex justify-between mb-2"><span class="font-mono text-[9px] text-silverArrow/60">FIA START GANTRY // TAX-FREE</span><button onclick="resetTaxChecklist()" class="font-mono text-[10px] text-silverArrow hover:text-petronas">RESET</button></div>
+              <div id="fia-gantry-lights" class="grid grid-cols-5 gap-2 place-items-center py-1"></div>
+            </div>
+          </div>
+          <div class="px-4 pb-4 space-y-2">
+            <div class="text-xs font-bold">2026/11 新制退稅 SOP（先付含稅・離境退款）</div>
+            <div id="steward-tax-list" class="space-y-2"></div>
+            <a href="https://vjw-lp.digital.go.jp/zh-hant/" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between bg-petronas/15 border border-petronas/50 rounded-xl px-3.5 py-3 text-petronas font-bold text-xs mt-2">
+              <span>🛂 開啟 Visit Japan Web（入境／離境線上退稅）</span><span class="font-mono">OPEN ↗</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="f1-panel carbon-weave p-4 space-y-3">
+          <div class="flex items-center justify-between"><h2 class="font-racing italic font-bold text-sm">FLIGHT & PADDOCK LOGISTICS</h2><button id="btn-edit-flight" onclick="toggleFlightEdit()" class="font-mono text-[11px] text-petronas bg-petronas/10 border border-petronas/40 px-2.5 py-1 rounded-lg">編輯情報</button></div>
+          <div id="flight-view" class="space-y-2">
+            <div class="bg-obsidian/90 border border-white/10 rounded-xl p-3"><div class="font-mono text-[9px] text-petronas">OUTBOUND 去程</div><div class="font-racing font-bold text-base">TPE ✈ OKA <span id="fv-out-code" class="font-mono text-xs text-volt ml-1"></span></div><div id="fv-out-detail" class="font-mono text-[11px] text-silverArrow/80"></div></div>
+            <div class="bg-obsidian/90 border border-white/10 rounded-xl p-3"><div class="font-mono text-[9px] text-sectorYellow">INBOUND 回程</div><div class="font-racing font-bold text-base">OKA ✈ TPE <span id="fv-in-code" class="font-mono text-xs text-volt ml-1"></span></div><div id="fv-in-detail" class="font-mono text-[11px] text-silverArrow/80"></div></div>
+            <div class="bg-obsidian/90 border border-white/10 rounded-xl p-3 space-y-1">
+              <div class="flex justify-between items-center gap-2"><div><div id="fv-rental-agency" class="text-xs font-bold"></div><div id="fv-rental-ref" class="font-mono font-bold text-sm text-petronas"></div></div><button onclick="copyText(state.flight.rentalRef,'已複製預約代號')" class="text-[11px] bg-carbonLight border border-white/15 px-2.5 py-1 rounded-lg">複製代號</button></div>
+              <div id="fv-shuttle" class="text-[11px] text-silverArrow/80 border-t border-white/10 pt-1"></div>
+            </div>
+          </div>
+          <div id="flight-edit" class="hidden space-y-2 text-xs">
+            <div class="grid grid-cols-2 gap-2"><input id="fe-out-code" placeholder="去程航班號" class="bg-obsidian border border-white/15 rounded-lg px-2.5 py-2 font-mono text-white" /><input id="fe-out-detail" placeholder="去程時間" class="bg-obsidian border border-white/15 rounded-lg px-2.5 py-2 font-mono text-white" /></div>
+            <div class="grid grid-cols-2 gap-2"><input id="fe-in-code" placeholder="回程航班號" class="bg-obsidian border border-white/15 rounded-lg px-2.5 py-2 font-mono text-white" /><input id="fe-in-detail" placeholder="回程時間" class="bg-obsidian border border-white/15 rounded-lg px-2.5 py-2 font-mono text-white" /></div>
+            <div class="grid grid-cols-2 gap-2"><input id="fe-rental-agency" placeholder="租車公司" class="bg-obsidian border border-white/15 rounded-lg px-2.5 py-2 text-white" /><input id="fe-rental-ref" placeholder="預約編號" class="bg-obsidian border border-white/15 rounded-lg px-2.5 py-2 font-mono text-white" /></div>
+            <input id="fe-shuttle" placeholder="機場接駁車集合處" class="w-full bg-obsidian border border-white/15 rounded-lg px-2.5 py-2 text-white" />
+            <button onclick="saveFlightDetails()" class="w-full bg-petronas text-obsidian font-bold py-2.5 rounded-xl">儲存航班情報</button>
+          </div>
+        </div>
+
+        <div class="f1-panel p-3.5 flex items-center justify-between gap-2">
+          <div><div class="font-mono text-[9px] text-silverArrow/60">TAIWAN CONSULATE</div><div class="text-xs font-bold">台北駐日代表處 那霸分處</div><div class="font-mono text-xs text-petronas">+81-98-862-7008</div></div>
+          <div class="flex gap-1.5"><button onclick="copyText('+81-98-862-7008','已複製電話')" class="px-2.5 py-1.5 text-[11px] bg-carbonLight border border-white/15 rounded-lg">複製</button><a href="tel:+81988627008" class="px-2.5 py-1.5 text-[11px] bg-petronas/15 border border-petronas/40 rounded-lg text-petronas font-bold">撥打</a></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 底部方向盤 4 模式導覽 -->
+    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-40 bg-obsidian/95 backdrop-blur-xl border-t border-petronas/30 safe-nav-pb">
+      <div class="grid grid-cols-5 items-center h-[66px] px-1">
+        <button onclick="switchMode('timing')" data-mode="timing" class="wheel-btn flex flex-col items-center gap-1 py-2 text-petronas"><span class="font-mono text-[9px] font-bold px-1.5 rounded bg-petronas/20 border border-petronas/60 mode-badge">M1</span><span class="font-racing font-bold text-[10px]">TIMING</span></button>
+        <button onclick="switchMode('telemetry')" data-mode="telemetry" class="wheel-btn flex flex-col items-center gap-1 py-2 text-silverArrow/55"><span class="font-mono text-[9px] font-bold px-1.5 rounded bg-carbon border border-white/10 mode-badge">M2</span><span class="font-racing font-bold text-[10px]">TELEMETRY</span></button>
+        <div class="flex justify-center"><button onclick="scrollToTopHub()" class="-mt-4 w-12 h-12 rounded-full carbon-weave border-2 border-petronas/65 shadow-tealGlow flex items-center justify-center active:scale-90"><svg viewBox="0 0 64 64" class="w-8 h-8"><circle cx="32" cy="32" r="28" fill="none" stroke="url(#starChrome)" stroke-width="2.8"/><polygon points="32,6 35.5,29 32,32" fill="#FFF"/><polygon points="32,6 28.5,29 32,32" fill="#8B96A3"/><polygon points="54.5,45 35.5,29 32,32" fill="#9AA5B2"/><polygon points="54.5,45 32,36 32,32" fill="#F1F5F9"/><polygon points="9.5,45 32,36 32,32" fill="#717D8A"/><polygon points="9.5,45 28.5,29 32,32" fill="#E2E8F0"/></svg></button></div>
+        <button onclick="switchMode('pitwall')" data-mode="pitwall" class="wheel-btn flex flex-col items-center gap-1 py-2 text-silverArrow/55"><span class="font-mono text-[9px] font-bold px-1.5 rounded bg-carbon border border-white/10 mode-badge">M3</span><span class="font-racing font-bold text-[10px]">PIT WALL</span></button>
+        <button onclick="switchMode('steward')" data-mode="steward" class="wheel-btn flex flex-col items-center gap-1 py-2 text-silverArrow/55"><span class="font-mono text-[9px] font-bold px-1.5 rounded bg-carbon border border-white/10 mode-badge">M4</span><span class="font-racing font-bold text-[10px]">STEWARD</span></button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- MODAL: 旅伴跨裝置同步 (PADDOCK SYNC) -->
+  <div id="cloud-sync-modal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-black/85 backdrop-blur-md p-3">
+    <div class="w-full max-w-[440px] f1-panel carbon-weave p-4 space-y-3.5 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-white/10 pb-2">
+        <div><h3 class="font-racing italic font-bold text-sm text-petronas">PADDOCK SYNC // 旅伴跨裝置同步</h3><p class="text-[11px] text-silverArrow/75">100% 免費・零硬編碼金鑰・支援 AES-256 端對端加密</p></div>
+        <button onclick="closeModal('cloud-sync-modal')" class="text-silverArrow text-xl px-2">&times;</button>
+      </div>
+      <div class="grid grid-cols-2 gap-1.5 bg-obsidian p-1 rounded-xl border border-white/10">
+        <button id="sync-tab-link" onclick="switchSyncTab('link')" class="py-2 rounded-lg text-xs font-bold bg-petronas/20 text-petronas border border-petronas/50">🔗 免設定連結同步</button>
+        <button id="sync-tab-cloud" onclick="switchSyncTab('cloud')" class="py-2 rounded-lg text-xs font-bold text-silverArrow">☁️ 雲端即時共編</button>
+      </div>
+      <div id="sync-pane-link" class="space-y-3 text-xs">
+        <div class="bg-obsidian/90 border border-petronas/30 rounded-xl p-3 space-y-2">
+          <div class="flex justify-between"><span class="font-bold">LINE 群組一鍵同步連結（免伺服器）</span><span class="font-mono text-[9px] text-greenFlag bg-greenFlag/15 px-1.5 rounded">ZERO SERVER</span></div>
+          <p class="text-[11px] text-silverArrow/80">將 5 天行程順序、雨備名單與共同分帳壓縮成網址，傳到 LINE 群組讓旅伴點擊即可套用。</p>
+          <button onclick="generateAndCopyShareLink()" class="w-full bg-petronas text-obsidian font-bold py-2.5 rounded-xl active:scale-95">🔗 產生並複製旅伴同步連結</button>
+        </div>
+        <div class="bg-obsidian/90 border border-white/10 rounded-xl p-3 space-y-2">
+          <div class="font-bold">本機存檔備份／還原 (JSON)</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="exportStateJson()" class="bg-carbonLight border border-white/15 py-2 rounded-xl">📤 匯出備份</button>
+            <label class="cursor-pointer text-center bg-carbonLight border border-white/15 text-petronas py-2 rounded-xl">📥 匯入還原<input type="file" accept="application/json,.json" class="hidden" onchange="importStateJson(event)" /></label>
+          </div>
+        </div>
+      </div>
+      <div id="sync-pane-cloud" class="hidden space-y-3 text-xs">
+        <div class="bg-obsidian/90 border border-white/10 rounded-xl p-3 space-y-2">
+          <div class="flex justify-between"><span class="font-bold">自訂免費資料庫（僅存於本機）</span><span id="cloud-conn-status" class="font-mono text-[9px] px-1.5 py-0.5 rounded bg-carbon text-silverArrow">本機模式</span></div>
+          <div class="grid grid-cols-2 gap-2">
+            <select id="sc-provider" class="bg-carbon border border-white/15 rounded-lg px-2 py-2 text-white"><option value="gas">Google Sheets (GAS)</option><option value="firebase">Firebase RTDB</option></select>
+            <input id="sc-member" type="text" placeholder="你的暱稱（如：我）" class="bg-carbon border border-white/15 rounded-lg px-2.5 py-2 text-white" />
+          </div>
+          <input id="sc-url" type="url" placeholder="貼上 https:// 開頭的部署網址或 Firebase 網址" class="w-full bg-carbon border border-white/15 rounded-lg px-2.5 py-2 font-mono text-[11px] text-white" />
+          <div class="grid grid-cols-2 gap-2">
+            <input id="sc-room" type="text" placeholder="房間代碼 (如 okinawa2027)" class="bg-carbon border border-white/15 rounded-lg px-2.5 py-2 font-mono text-white" />
+            <input id="sc-passcode" type="password" placeholder="🔒 端對端加密密碼" class="bg-carbon border border-volt/35 rounded-lg px-2.5 py-2 font-mono text-volt" />
+          </div>
+          <label class="flex items-center justify-between bg-carbon/80 border border-white/10 rounded-lg px-2.5 py-2"><span class="text-[11px] text-silverArrow">自動雲端同步（每 25 秒更新）</span><input id="sc-auto" type="checkbox" class="w-4 h-4 accent-[#00D2BE]" /></label>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button onclick="saveCloudSyncConfig()" class="bg-petronas text-obsidian font-bold py-2 rounded-xl">儲存設定</button>
+            <button onclick="cloudPushNow(true)" class="bg-petronas/15 border border-petronas/50 text-petronas font-bold py-2 rounded-xl">↑ 推送</button>
+            <button onclick="cloudPullNow(true)" class="bg-volt/15 border border-volt/50 text-volt font-bold py-2 rounded-xl">↓ 拉取</button>
+          </div>
+          <div id="cloud-last-meta" class="font-mono text-[10px] text-silverArrow/65 text-center"></div>
+        </div>
+        <details class="bg-obsidian/80 border border-white/10 rounded-xl p-3 text-[11px] text-silverArrow/85">
+          <summary class="cursor-pointer font-bold text-petronas">📘 免費 Google 試算表後端程式碼（一鍵複製）</summary>
+          <div class="pt-2 space-y-2 mt-2 border-t border-white/10">
+            <p>開新 Google 試算表 → 擴充功能 → Apps Script → 貼上下方程式 → 部署為「網頁應用程式（誰可以存取：所有人）」→ 複製網址貼到上方即可。</p>
+            <pre id="gas-snippet" class="bg-black border border-white/15 rounded-lg p-2 font-mono text-[9px] text-petronas overflow-x-auto">function doGet(e){var r=e.parameter.room||'default',s=SpreadsheetApp.getActiveSpreadsheet().getActiveSheet(),v=s.getRange('A1:B50').getValues();for(var i=0;i&lt;v.length;i++){if(v[i][0]===r)return ContentService.createTextOutput(v[i][1]||'{}').setMimeType(ContentService.MimeType.JSON);}return ContentService.createTextOutput('{}').setMimeType(ContentService.MimeType.JSON);}
+function doPost(e){var d=JSON.parse(e.postData.contents),r=d.room||'default',s=SpreadsheetApp.getActiveSpreadsheet().getActiveSheet(),v=s.getRange('A1:B50').getValues();for(var i=0;i&lt;v.length;i++){if(v[i][0]===r||!v[i][0]){s.getRange(i+1,1,1,2).setValues([[r,JSON.stringify(d.payload)]]);break;}}return ContentService.createTextOutput('{"ok":true}').setMimeType(ContentService.MimeType.JSON);}</pre>
+            <button onclick="copyText(document.getElementById('gas-snippet').textContent,'已複製 Apps Script 程式碼')" class="w-full py-1.5 rounded-lg bg-carbonLight border border-white/15 text-petronas font-bold">📋 複製 Apps Script 程式碼</button>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: 收到旅伴連結確認 -->
+  <div id="import-link-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 p-4">
+    <div class="w-full max-w-[400px] f1-panel carbon-weave p-4 space-y-3 border-petronas/60">
+      <div class="font-racing italic font-bold text-sm text-petronas">📡 偵測到旅伴同步資料</div>
+      <p id="import-link-desc" class="text-xs text-silverArrow leading-relaxed"></p>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="dismissPendingLinkImport()" class="py-2.5 rounded-xl bg-obsidian border border-white/15 text-silverArrow text-xs font-bold">略過</button>
+        <button onclick="applyPendingLinkImport()" class="py-2.5 rounded-xl bg-petronas text-obsidian text-xs font-bold">確認套用</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: 視覺素材上傳 -->
+  <div id="visual-studio-modal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-black/85 p-3">
+    <div class="w-full max-w-[420px] f1-panel carbon-weave p-4 space-y-3.5 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-white/10 pb-2">
+        <div><h3 class="font-racing italic font-bold text-sm text-petronas">VISUAL STUDIO // 自訂封面與頭像</h3><p class="text-[11px] text-silverArrow/75">直接從手機相簿上傳圖片，永久存於本機</p></div>
+        <button onclick="closeModal('visual-studio-modal')" class="text-silverArrow text-xl px-2">&times;</button>
+      </div>
+      <div class="bg-obsidian/90 border border-white/10 rounded-xl p-3 space-y-2">
+        <div class="flex justify-between text-xs"><span class="font-bold">1. HERO F1 賽車橫幅</span><span id="vs-car-source" class="font-mono text-[9px] text-petronas">READY</span></div>
+        <img id="vs-car-preview" class="w-full h-24 object-cover rounded-lg border border-white/10 bg-black" alt="Preview" />
+        <label class="cursor-pointer block text-center bg-petronas/15 border border-petronas/45 text-petronas font-bold text-xs py-2 rounded-lg">📷 上傳自訂賽車背景圖<input type="file" accept="image/*" class="hidden" onchange="handleLocalImageUpload(event,'heroCar')" /></label>
+      </div>
+      <div class="bg-obsidian/90 border border-white/10 rounded-xl p-3 space-y-2">
+        <div class="flex justify-between text-xs"><span class="font-bold">2. GR63 安全帽／個人頭像</span><span id="vs-helmet-source" class="font-mono text-[9px] text-petronas">READY</span></div>
+        <div class="flex items-center gap-3">
+          <img id="vs-helmet-preview" class="w-16 h-16 object-cover rounded-xl border border-petronas/40 bg-black flex-shrink-0" alt="Helmet" />
+          <label class="flex-1 cursor-pointer text-center bg-petronas/15 border border-petronas/45 text-petronas font-bold text-xs py-2.5 rounded-lg">📷 上傳頭像圖片<input type="file" accept="image/*" class="hidden" onchange="handleLocalImageUpload(event,'helmetAvatar')" /></label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: 新增景點／候補 -->
+  <div id="add-stop-modal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-black/85 p-3">
+    <div class="w-full max-w-[420px] f1-panel carbon-weave p-4 space-y-3">
+      <div class="flex justify-between items-center border-b border-white/10 pb-2"><h3 class="font-racing italic font-bold text-sm text-petronas">+ ADD STOP (<span id="add-stop-lap-tag">LAP 01</span>)</h3><button onclick="closeModal('add-stop-modal')" class="text-silverArrow text-xl px-2">&times;</button></div>
+      <div class="space-y-2 text-xs">
+        <div class="grid grid-cols-3 gap-2">
+          <div><label class="block font-mono text-[10px] text-silverArrow/70 mb-1">停留(分)</label><input id="ns-stay" type="number" min="10" step="5" value="60" class="w-full bg-obsidian border border-white/15 rounded-xl px-2 py-2 font-mono text-white" /></div>
+          <div><label class="block font-mono text-[10px] text-silverArrow/70 mb-1">類型</label><select id="ns-cat" class="w-full bg-obsidian border border-white/15 rounded-xl px-2 py-2 text-white"><option value="SECTOR">SECTOR</option><option value="PIT STOP">PIT STOP</option><option value="RAIN BACKUP">☔ 雨備</option></select></div>
+          <div><label class="block font-mono text-[10px] text-silverArrow/70 mb-1">輪胎</label><select id="ns-tire" class="w-full bg-obsidian border border-white/15 rounded-xl px-2 py-2 font-mono text-white"><option value="S">S 軟胎</option><option value="M" selected>M 中性</option><option value="H">H 硬胎</option><option value="I">I 雨胎</option></select></div>
+        </div>
+        <input id="ns-name" placeholder="景點或店家名稱 *" class="w-full bg-obsidian border border-white/15 rounded-xl px-3 py-2 text-white" />
+        <div class="grid grid-cols-2 gap-2">
+          <input id="ns-mapcode" placeholder="Mapcode (選填)" class="bg-obsidian border border-white/15 rounded-xl px-2.5 py-2 font-mono text-white" />
+          <input id="ns-tel" placeholder="電話 TEL (選填)" class="bg-obsidian border border-white/15 rounded-xl px-2.5 py-2 font-mono text-white" />
+        </div>
+        <input id="ns-query" placeholder="座標 lat,lng 或 Google 搜尋關鍵字 (選填)" class="w-full bg-obsidian border border-white/15 rounded-xl px-3 py-2 text-white" />
+        <input id="ns-note" placeholder="備註（停車或提醒）" class="w-full bg-obsidian border border-white/15 rounded-xl px-3 py-2 text-white" />
+      </div>
+      <div class="grid grid-cols-2 gap-2"><button onclick="closeModal('add-stop-modal')" class="py-2.5 bg-obsidian border border-white/15 rounded-xl text-xs font-bold text-silverArrow">取消</button><button onclick="confirmAddStop()" class="py-2.5 bg-petronas rounded-xl text-xs font-bold text-obsidian">確認加入</button></div>
+    </div>
+  </div>
+
+  <!-- MODAL: 微調時間/停留/車程 -->
+  <div id="time-tune-modal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-black/85 p-3">
+    <div class="w-full max-w-[400px] f1-panel carbon-weave p-4 space-y-3">
+      <div class="flex justify-between items-center border-b border-white/10 pb-2"><div><h3 class="font-racing italic font-bold text-sm text-petronas">PIT TIMING // 調整時間</h3><p id="tt-stop-name" class="text-xs font-bold truncate"></p></div><button onclick="closeModal('time-tune-modal')" class="text-silverArrow text-xl px-2">&times;</button></div>
+      <div class="space-y-2.5 text-xs">
+        <div class="bg-obsidian/90 border border-white/10 rounded-xl p-3 space-y-2">
+          <div class="font-mono text-[10px] text-silverArrow/75">抵達時間（改完自動順延後續各站）</div>
+          <div class="flex gap-2"><input id="tt-arrival" type="time" class="flex-1 bg-carbon border border-petronas/40 rounded-lg px-3 py-2 font-mono text-base font-bold text-white" /><button onclick="shiftTuneArrival(-15)" class="px-2.5 bg-carbonLight rounded-lg font-mono">-15m</button><button onclick="shiftTuneArrival(15)" class="px-2.5 bg-petronas/15 border border-petronas/40 rounded-lg font-mono text-petronas font-bold">+15m</button></div>
+        </div>
+        <div class="bg-obsidian/90 border border-white/10 rounded-xl p-3 space-y-2">
+          <div class="flex justify-between"><span class="font-mono text-[10px] text-silverArrow/75">停留時間</span><span id="tt-stay-label" class="font-mono font-bold text-volt">60 min</span></div>
+          <div class="grid grid-cols-4 gap-1.5"><button onclick="adjustTuneStay(-30)" class="py-1.5 bg-carbonLight rounded-lg font-mono">-30m</button><button onclick="adjustTuneStay(-15)" class="py-1.5 bg-carbonLight rounded-lg font-mono">-15m</button><button onclick="adjustTuneStay(15)" class="py-1.5 bg-petronas/15 border border-petronas/40 rounded-lg font-mono text-petronas">+15m</button><button onclick="adjustTuneStay(30)" class="py-1.5 bg-petronas/15 border border-petronas/40 rounded-lg font-mono text-petronas">+30m</button></div>
+        </div>
+        <div id="tt-drive-row" class="bg-obsidian/90 border border-white/10 rounded-xl p-3 space-y-2">
+          <div class="flex justify-between"><span class="font-mono text-[10px] text-silverArrow/75">前一站至此車程（塞車微調）</span><span id="tt-drive-label" class="font-mono font-bold text-petronas">15 min</span></div>
+          <div class="grid grid-cols-4 gap-1.5"><button onclick="adjustTuneDrive(-10)" class="py-1.5 bg-carbonLight rounded-lg font-mono">-10m</button><button onclick="adjustTuneDrive(-5)" class="py-1.5 bg-carbonLight rounded-lg font-mono">-5m</button><button onclick="adjustTuneDrive(10)" class="py-1.5 bg-sectorYellow/15 border border-sectorYellow/40 rounded-lg font-mono text-sectorYellow">+10m</button><button onclick="adjustTuneDrive(20)" class="py-1.5 bg-fiaRed/15 border border-fiaRed/40 rounded-lg font-mono text-fiaRed">+20m塞</button></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2"><button onclick="closeModal('time-tune-modal')" class="py-2.5 bg-obsidian border border-white/15 rounded-xl text-xs font-bold text-silverArrow">取消</button><button onclick="saveTimeTuneModal()" class="py-2.5 bg-petronas rounded-xl text-xs font-bold text-obsidian">套用並順延</button></div>
+    </div>
+  </div>
+
+  <!-- MODAL: 候補替換 -->
+  <div id="swap-pocket-modal" class="fixed inset-0 z-50 hidden items-end sm:items-center justify-center bg-black/85 p-3">
+    <div class="w-full max-w-[400px] f1-panel carbon-weave p-4 space-y-3">
+      <div class="flex justify-between items-center border-b border-white/10 pb-2"><div><h3 class="font-racing italic font-bold text-sm text-volt">PIT SWAP // 選擇替換站點</h3><p id="swap-pocket-target-name" class="text-xs font-bold mt-0.5"></p></div><button onclick="closeModal('swap-pocket-modal')" class="text-silverArrow text-xl px-2">&times;</button></div>
+      <div id="swap-pocket-options" class="space-y-2 max-h-60 overflow-y-auto"></div>
+      <button onclick="closeModal('swap-pocket-modal')" class="w-full py-2 bg-obsidian border border-white/15 rounded-xl text-xs font-bold text-silverArrow">取消</button>
+    </div>
+  </div>
+
+  <!-- MODAL: Team Radio 全螢幕大字卡 -->
+  <div id="team-radio-modal" onclick="closeModal('team-radio-modal')" class="fixed inset-0 z-50 hidden flex-col items-center justify-center bg-black/95 p-5 text-center">
+    <div class="w-full max-w-[440px] border-2 border-petronas rounded-3xl bg-black p-6 shadow-tealGlow space-y-4" onclick="event.stopPropagation()">
+      <div class="flex justify-between items-center border-b border-white/15 pb-2.5"><span id="tr-modal-tag" class="font-racing italic font-bold text-xs text-petronas">GR63 TEAM RADIO</span><button onclick="closeModal('team-radio-modal')" class="text-silverArrow text-2xl">&times;</button></div>
+      <div id="tr-modal-jp-main" class="text-3xl font-bold text-white leading-snug py-2"></div>
+      <div id="tr-modal-jp-sub" class="text-xl font-bold text-volt leading-snug"></div>
+      <div class="h-px bg-white/15"></div>
+      <div id="tr-modal-zh" class="text-sm font-bold text-petronas"></div>
+      <div id="tr-modal-romaji" class="text-xs font-mono text-silverArrow/70"></div>
+      <button onclick="closeModal('team-radio-modal')" class="w-full bg-carbonLight border border-white/20 text-white font-bold text-xs py-3 rounded-xl">關閉大字卡</button>
+    </div>
+  </div>
+
+  <!-- Toast 通知 -->
+  <div id="toast-box" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[420px] pointer-events-none transition-all duration-300 opacity-0 -translate-y-2">
+    <div class="bg-carbon/95 border border-petronas/65 border-l-4 border-l-petronas rounded-xl px-4 py-3 shadow-tealGlow flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-petronas flex-shrink-0"></span><span id="toast-text" class="text-xs text-white"></span></div>
+  </div>
+
+  <script>
+    const STATE_KEY = 'gr63_okinawa_gp_2027_state_v5';
+    const SYNC_CFG_KEY = 'gr63_okinawa_sync_config_v1';
+    const WEATHER_CACHE_KEY = 'gr63_okinawa_weather_v4';
+    const FX_CACHE_KEY = 'gr63_okinawa_fx_v4';
+    const IDB_NAME = 'f1_okinawa_assets_v4', IDB_STORE = 'visuals';
+
+    const LAPS_META = [
+      { id:1, code:'LAP 01', short:'D1 那霸整備', title:'那霸降落 & 租車整備', sector:1, sectorName:'SECTOR 1 // SOUTH', dotPos:{x:36,y:124}, startTime:'11:00' },
+      { id:2, code:'LAP 02', short:'D2 中部西岸', title:'中部海灣高速賽段', sector:2, sectorName:'SECTOR 2 // CENTRAL', dotPos:{x:58,y:78}, startTime:'09:30' },
+      { id:3, code:'LAP 03', short:'D3 北部美ら海', title:'北部美ら海全速巡航', sector:3, sectorName:'SECTOR 3 // NORTH', dotPos:{x:86,y:28}, startTime:'09:30' },
+      { id:4, code:'LAP 04', short:'D4 南部採購', title:'南部文化與戰利品進站', sector:1, sectorName:'SECTOR 1 // SOUTH', dotPos:{x:43,y:134}, startTime:'10:00' },
+      { id:5, code:'LAP 05', short:'D5 退稅返台', title:'終點方格旗與退稅離境', sector:1, sectorName:'SECTOR 1 // FINISH', dotPos:{x:30,y:138}, startTime:'09:30' }
+    ];
+
+    const DEFAULT_LAP_STOPS = {
+      1: [
+        { id:'l1-1', time:'11:00', stayMin:30, driveMin:0, cat:'PIT STOP', tire:'H', name:'那霸機場 (OKA) 抵達', jpArea:'那覇空港', lat:26.2048, lng:127.6458, mapcode:'33 123 340*52', tel:'098-840-1151', note:'入境後至國內線大廳外 11 號柱搭租車接駁車' },
+        { id:'l1-2', time:'11:45', stayMin:60, driveMin:15, cat:'PIT STOP', tire:'M', name:'OTS / Times 臨空豐崎取車', jpArea:'豊見城', lat:26.1565, lng:127.6572, mapcode:'232 543 502*55', tel:'098-856-8877', note:'車身錄影存證、測試 CarPlay 與中文導航介面' },
+        { id:'l1-3', time:'13:00', stayMin:150, driveMin:15, cat:'SECTOR', tire:'S', name:'瀨長島 Umikaji Terrace', jpArea:'瀬長島', lat:26.1764, lng:127.6406, mapcode:'33 002 602*22', tel:'098-851-7446', note:'海景階梯商場、幸福鬆餅，注意單行道與海風' },
+        { id:'l1-4', time:'15:50', stayMin:120, driveMin:20, cat:'PIT STOP', tire:'M', name:'國際通飯店 Check-in', jpArea:'国際通り', lat:26.2153, lng:127.6852, mapcode:'33 157 382*41', tel:'098-866-0000', note:'停妥車輛後步行逛國際通、牧志公設市場晚餐' }
+      ],
+      2: [
+        { id:'l2-1', time:'09:30', stayMin:75, driveMin:0, cat:'PIT STOP', tire:'S', name:'泊港魚市場 (Tomari Iyumachi)', jpArea:'那覇 泊', lat:26.2266, lng:127.6745, mapcode:'33 185 377*88', tel:'098-868-1096', note:'生魚片早午餐，市場前方免費平面停車場' },
+        { id:'l2-2', time:'11:40', stayMin:90, driveMin:55, cat:'SECTOR', tire:'I', name:'殘波岬燈塔', jpArea:'読谷村', lat:26.4411, lng:127.7124, mapcode:'1005 685 378*55', tel:'098-982-9216', note:'30公尺斷崖絕景，1月季風強務必穿防風外套' },
+        { id:'l2-3', time:'13:40', stayMin:150, driveMin:30, cat:'SECTOR', tire:'S', name:'美國村 北谷日落海灘', jpArea:'北谷 美浜', lat:26.3165, lng:127.7577, mapcode:'33 526 212*31', tel:'098-926-4455', note:'海濱夕陽散步與咖啡補給，AEON 周邊好停' },
+        { id:'l2-4', time:'16:45', stayMin:90, driveMin:35, cat:'PIT STOP', tire:'H', name:'恩納海景飯店 Check-in', jpArea:'恩納村', lat:26.4978, lng:127.8532, mapcode:'206 158 552*11', tel:'098-966-1211', note:'入住中部海景渡假區，準備明日北部衝刺' }
+      ],
+      3: [
+        { id:'l3-1', time:'09:30', stayMin:60, driveMin:0, cat:'SECTOR', tire:'M', name:'萬座毛 (Manzamo)', jpArea:'恩納村 万座毛', lat:26.5049, lng:127.8502, mapcode:'206 312 039*17', tel:'098-966-8080', note:'象鼻岩海岸步道與觀景台，風大注意帽子' },
+        { id:'l3-2', time:'11:25', stayMin:180, driveMin:55, cat:'SECTOR', tire:'H', name:'沖繩美麗海水族館', jpArea:'本部町', lat:26.6943, lng:127.8779, mapcode:'553 075 797*77', tel:'0980-48-3748', note:'黑潮之海鯨鯊！建議直停 P7 立體停車場最近' },
+        { id:'l3-3', time:'14:55', stayMin:90, driveMin:30, cat:'SECTOR', tire:'S', name:'古宇利大橋 & 蝦蝦飯', jpArea:'古宇利島', lat:26.6989, lng:128.0175, mapcode:'485 631 329*31', tel:'0980-56-1242', note:'跨海大橋兜風，橋頭兩端停車場可拍美照' },
+        { id:'l3-4', time:'16:50', stayMin:90, driveMin:25, cat:'PIT STOP', tire:'M', name:'名護晚餐（燒肉乃我那霸 / 阿古豬）', jpArea:'名護市', lat:26.5912, lng:127.9735, mapcode:'206 657 848*85', tel:'0980-43-6583', note:'北部人氣燒肉與阿古豬涮涮鍋，建議先訂位' }
+      ],
+      4: [
+        { id:'l4-1', time:'10:00', stayMin:120, driveMin:0, cat:'SECTOR', tire:'M', name:'玉泉洞 沖繩世界文化王國', jpArea:'南城市', lat:26.1394, lng:127.7503, mapcode:'232 495 330*28', tel:'098-949-7421', note:'鐘乳石洞穴步道微濕，穿防滑鞋並看太鼓舞' },
+        { id:'l4-2', time:'12:25', stayMin:75, driveMin:25, cat:'PIT STOP', tire:'S', name:'系滿魚市場 (Itoman)', jpArea:'糸満市', lat:26.1342, lng:127.6606, mapcode:'232 484 199*33', tel:'098-992-2803', note:'現烤龍蝦、海膽生魚片，門口大片免費車位' },
+        { id:'l4-3', time:'13:55', stayMin:180, driveMin:15, cat:'SECTOR', tire:'H', name:'ASHIBINAA Outlet / iias 豐崎', jpArea:'豊見城 豊崎', lat:26.1588, lng:127.6562, mapcode:'232 544 452*22', tel:'098-891-6000', note:'最後大採買！滿 ¥5,500 含稅辦退稅、拍車位' },
+        { id:'l4-4', time:'17:15', stayMin:90, driveMin:20, cat:'PIT STOP', tire:'M', name:'那霸市區還車前整備', jpArea:'那覇市', lat:26.2124, lng:127.6809, mapcode:'33 157 382*41', tel:'098-866-0000', note:'整理戰利品收據，確認免稅消耗品未拆封' }
+      ],
+      5: [
+        { id:'l5-1', time:'09:30', stayMin:60, driveMin:0, cat:'SECTOR', tire:'S', name:'波上宮 懸崖神社參拜', jpArea:'那覇 若狭', lat:26.2206, lng:127.6712, mapcode:'33 185 023*55', tel:'098-868-3697', note:'祈福與收集御守，神社旁計次停車場' },
+        { id:'l5-2', time:'10:50', stayMin:60, driveMin:20, cat:'PIT STOP', tire:'M', name:'加滿油 & 機場附近還車', jpArea:'那覇空港', lat:26.1856, lng:127.6565, mapcode:'33 034 452*63', tel:'098-856-8877', note:'用 M3 日文大字卡加滿 Regular 汽油並拿收據' },
+        { id:'l5-3', time:'12:05', stayMin:120, driveMin:15, cat:'PIT STOP', tire:'I', name:'那霸機場出境大廳退稅查驗', jpArea:'那覇空港', lat:26.2048, lng:127.6458, mapcode:'33 123 340*52', tel:'098-840-1151', note:'切勿先託運行李！先 Kiosk/VJW 查驗亮綠燈' },
+        { id:'l5-4', time:'14:05', stayMin:120, driveMin:0, cat:'SECTOR', tire:'S', name:'登機返台 // CHEQUERED FLAG', jpArea:'那覇空港', lat:26.2048, lng:127.6458, mapcode:'33 123 340*52', tel:'', note:'安檢後逛國際線免稅店最後補貨，平安返台' }
+      ]
+    };
+
+    const DEFAULT_POCKET = [
+      { id:'pk-1', stayMin:90, cat:'RAIN BACKUP', tag:'RAIN', tire:'I', name:'☔ DMM Kariyushi 室內水族館', jpArea:'豊見城 豊崎', lat:26.1566, lng:127.6512, mapcode:'232 543 400*25', tel:'098-996-4800', note:'iias 豐崎旁，南部下雨／強風最佳替代方案' },
+      { id:'pk-2', stayMin:120, cat:'RAIN BACKUP', tag:'RAIN', tire:'I', name:'☔ PARCO CITY 浦添西海岸商場', jpArea:'浦添市', lat:26.2625, lng:127.6981, mapcode:'33 339 276*66', tel:'098-871-1120', note:'超大型海景室內商場，免費大型室內停車場' },
+      { id:'pk-3', stayMin:150, cat:'RAIN BACKUP', tag:'RAIN', tire:'I', name:'☔ AEON MALL 沖繩來客夢 (Rycom)', jpArea:'北中城村', lat:26.3143, lng:127.7966, mapcode:'33 530 406*45', tel:'098-930-0425', note:'中部雨備首選！寶可夢中心、超市與餐廳齊全' },
+      { id:'pk-4', stayMin:90, cat:'RAIN BACKUP', tag:'RAIN', tire:'I', name:'☔ 名護鳳梨園 (雨棚自動遊園車)', jpArea:'名護市', lat:26.6156, lng:127.9698, mapcode:'206 716 467*26', tel:'0980-53-3659', note:'北部雨備，搭遮雨棚自動遊園車逛園區' },
+      { id:'pk-5', stayMin:45, cat:'PIT STOP', tag:'FOOD', tire:'S', name:'🍔 A&W 牧港店（復古美式漢堡）', jpArea:'浦添 牧港', lat:26.2646, lng:127.7347, mapcode:'33 341 596*63', tel:'098-876-6081', note:'沖繩限定速食，漂浮麥根沙士＋車道點餐' },
+      { id:'pk-6', stayMin:90, cat:'PIT STOP', tag:'RAIN', tire:'I', name:'♨️ 琉球溫泉 瀨長島龍神之湯', jpArea:'瀬長島', lat:26.1753, lng:127.6416, mapcode:'33 002 602*22', tel:'098-851-7167', note:'一月冷風天泡湯看飛機絕佳備案' }
+    ];
+
+    const TAX_SOP_ITEMS = [
+      '單店單日含稅滿 ¥5,500（先付含稅價，已取消密封袋分類）',
+      '確認同一收據內所有消耗品皆未在境內拆封食用（拆一項整筆作廢）',
+      '抵達那霸機場出境大廳，先辦退稅查驗、切勿先託運行李',
+      '至機場自助機台（Kiosk）或 Visit Japan Web 刷護照完成查驗',
+      '確認系統顯示綠燈免檢（或完成海關開箱查驗）再前往櫃檯託運'
+    ];
+
+    const TEAM_RADIO = {
+      box: { tag:'BOX BOX // 加油站', jpMain:'レギュラー、満タンでお願いします。', jpSub:'領収書をください。', zh:'一般汽油加滿 ＋ 請給我收據（還車必備）', romaji:'Re-gyu-rā, Man-tan de O-ne-ga-i-shi-ma-su.' },
+      return: { tag:'PIT EXIT // 機場還車', jpMain:'ガソリンは満タンにしました。', jpSub:'給油のレシートはこちらです。', zh:'汽油已加滿，這是剛剛的加油收據', romaji:'Ga-so-rin wa Man-tan ni Shi-ma-shi-ta.' },
+      hotel: { tag:'GARAGE // 飯店入住停車', jpMain:'チェックインをお願いします。', jpSub:'駐車場はありますか？', zh:'我要辦理入住，請問有附設停車場嗎？', romaji:'Chek-ku-in o O-ne-ga-i-shi-ma-su.' },
+      safety: { tag:'SAFETY CAR // 車禍急救', jpMain:'すみません、レンタカーで事故にあいました。', jpSub:'警察（110）と救急車（119）を呼んでください。', zh:'我開租賃車發生事故了，請幫我叫警察(110)或救護車(119)', romaji:'Su-mi-ma-sen, Ren-ta-kā de Ji-ko ni A-i-ma-shi-ta.' }
+    };
+
+    const deepClone = o => JSON.parse(JSON.stringify(o));
+    let currentMode = 'timing', activeLapId = 1, pocketFilter = 'ALL', addStopTarget = 'lap';
+    let tuningStopIndex = -1, swapPocketId = null, pendingLinkState = null;
+    let sortableInstance = null, toastTimer = null, cloudPollTimer = null, cloudPushDebounce = null;
+    const osrmLegCache = new Map();
+
+    let state = {
+      updatedAt: Date.now(), updatedBy: 'Driver 63',
+      lapStops: deepClone(DEFAULT_LAP_STOPS), pocketStops: deepClone(DEFAULT_POCKET),
+      companions: ['我', '旅伴A'], fxRate: 0.215, fxManual: false, expenses: [], parking: null,
+      rentalEmergency: { name: 'OTS 臨空豐崎營業所（暫定）', phone: '+81-98-856-8877' },
+      flight: { outCode:'JX870（暫定）', outDetail:'2027/01/15 08:15 TPE → 10:45 OKA', inCode:'JX871（暫定）', inDetail:'2027/01/19 16:30 OKA → 17:15 TPE', rentalAgency:'OTS 臨空豐崎營業所', rentalRef:'OTS-2027-GR63', shuttle:'接駁車：那霸機場國內線大廳外 11 號柱' },
+      taxChecks: [false, false, false, false, false]
+    };
+
+    let syncConfig = { provider: 'gas', url: '', room: '', passcode: '', member: '我', autoSync: false };
+
+    const esc = v => v == null ? '' : String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const openModal = id => { const m = document.getElementById(id); m.classList.remove('hidden'); m.classList.add('flex'); };
+    const closeModal = id => { const m = document.getElementById(id); m.classList.add('hidden'); m.classList.remove('flex'); };
+
+    function showToast(msg) {
+      const box = document.getElementById('toast-box'), txt = document.getElementById('toast-text');
+      txt.textContent = msg;
+      box.classList.remove('opacity-0', '-translate-y-2'); box.classList.add('opacity-100', 'translate-y-0');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { box.classList.remove('opacity-100', 'translate-y-0'); box.classList.add('opacity-0', '-translate-y-2'); }, 2600);
+    }
+
+    function copyText(text, msg) {
+      if (!text) return showToast('無可複製內容');
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => showToast(msg || `已複製：${text}`)).catch(() => fallbackCopy(text, msg));
+      } else fallbackCopy(text, msg);
+    }
+    function fallbackCopy(text, msg) {
+      const ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;left:-9999px';
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy'); document.body.removeChild(ta);
+      showToast(ok ? (msg || `已複製：${text}`) : '請手動長按複製');
+    }
+
+    function mergeState(p) {
+      if (!p || typeof p !== 'object') return;
+      state = {
+        ...state, ...p,
+        lapStops: p.lapStops ? { ...deepClone(DEFAULT_LAP_STOPS), ...p.lapStops } : state.lapStops,
+        pocketStops: Array.isArray(p.pocketStops) ? p.pocketStops : state.pocketStops,
+        companions: Array.isArray(p.companions) && p.companions.length ? p.companions : state.companions,
+        rentalEmergency: { ...state.rentalEmergency, ...(p.rentalEmergency || {}) },
+        flight: { ...state.flight, ...(p.flight || {}) },
+        taxChecks: Array.isArray(p.taxChecks) && p.taxChecks.length === 5 ? p.taxChecks : state.taxChecks
+      };
+    }
+    function loadState() {
+      try { const r = localStorage.getItem(STATE_KEY); if (r) mergeState(JSON.parse(r)); } catch {}
+      try { const s = localStorage.getItem(SYNC_CFG_KEY); if (s) syncConfig = { ...syncConfig, ...JSON.parse(s) }; } catch {}
+    }
+    function saveState(skipCloud = false) {
+      state.updatedAt = Date.now(); state.updatedBy = syncConfig.member || 'Driver 63';
+      try { localStorage.setItem(STATE_KEY, JSON.stringify(state)); } catch {}
+      if (!skipCloud && syncConfig.autoSync && syncConfig.url && syncConfig.room) {
+        clearTimeout(cloudPushDebounce);
+        cloudPushDebounce = setTimeout(() => cloudPushNow(false), 1200);
+      }
+    }
+
+    // 時間與距離工具
+    const toMins = hhmm => { const m = String(hhmm||'09:30').match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1]%24)*60+(+m[2]%60) : 570; };
+    const toHHMM = mins => { const w = ((Math.round(mins)%1440)+1440)%1440; return `${String(Math.floor(w/60)).padStart(2,'0')}:${String(w%60).padStart(2,'0')}`; };
+    const fmtDur = m => { m = Math.max(0, Math.round(m)); return m < 60 ? `${m}m` : `${Math.floor(m/60)}h${m%60 ? ' '+(m%60)+'m' : ''}`; };
+    function distKm(a, b) {
+      const R = 6371, rad = d => d * Math.PI / 180, dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
+      const x = Math.sin(dLat/2)**2 + Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(dLng/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
+    }
+    function estDrive(a, b) {
+      if (a?.lat && a?.lng && b?.lat && b?.lng) { const km = distKm(a, b); return km < 0.3 ? 0 : Math.max(5, Math.round((km * 1.32 / 38) * 60 + 5)); }
+      return 20;
+    }
+
+    // --- 跨裝置同步 (LINE 壓縮連結 + Web Crypto AES-256-GCM 雲端) ---
+    function openCloudSyncModal() {
+      document.getElementById('sc-provider').value = syncConfig.provider || 'gas';
+      document.getElementById('sc-url').value = syncConfig.url || '';
+      document.getElementById('sc-room').value = syncConfig.room || '';
+      document.getElementById('sc-passcode').value = syncConfig.passcode || '';
+      document.getElementById('sc-member').value = syncConfig.member || '我';
+      document.getElementById('sc-auto').checked = !!syncConfig.autoSync;
+      updateCloudStatusUI(); openModal('cloud-sync-modal');
+    }
+    function switchSyncTab(t) {
+      const isL = t === 'link';
+      document.getElementById('sync-pane-link').classList.toggle('hidden', !isL);
+      document.getElementById('sync-pane-cloud').classList.toggle('hidden', isL);
+      document.getElementById('sync-tab-link').className = isL ? 'py-2 rounded-lg text-xs font-bold bg-petronas/20 text-petronas border border-petronas/50' : 'py-2 rounded-lg text-xs font-bold text-silverArrow';
+      document.getElementById('sync-tab-cloud').className = !isL ? 'py-2 rounded-lg text-xs font-bold bg-petronas/20 text-petronas border border-petronas/50' : 'py-2 rounded-lg text-xs font-bold text-silverArrow';
+    }
+    function updateCloudStatusUI() {
+      const b = document.getElementById('cloud-conn-status'), m = document.getElementById('cloud-last-meta'), h = document.getElementById('header-sync-label');
+      if (syncConfig.url && syncConfig.room) {
+        b.textContent = syncConfig.passcode ? '🔒 E2EE' : 'CLOUD'; b.className = 'font-mono text-[9px] px-1.5 py-0.5 rounded bg-petronas/20 text-petronas';
+        if (h) h.textContent = syncConfig.autoSync ? 'CLOUD' : 'SYNC';
+      } else { b.textContent = '本機模式'; if (h) h.textContent = 'SYNC'; }
+      if (state.updatedAt) m.textContent = `最後更新：${new Date(state.updatedAt).toLocaleTimeString('zh-TW',{hour12:false})} (${state.updatedBy||'我'})`;
+    }
+    const u8ToB64u = u => { let s=''; for(let i=0;i<u.length;i++) s+=String.fromCharCode(u[i]); return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); };
+    const b64uToU8 = b => { const p=b.replace(/-/g,'+').replace(/_/g,'/')+'==='.slice((b.length+3)%4), s=atob(p), u=new Uint8Array(s.length); for(let i=0;i<s.length;i++) u[i]=s.charCodeAt(i); return u; };
+
+    async function compressToken(str) {
+      const enc = new TextEncoder().encode(str);
+      if (typeof CompressionStream !== 'undefined') {
+        const cs = new CompressionStream('gzip'), w = cs.writable.getWriter(); w.write(enc); w.close();
+        return 'gz.' + u8ToB64u(new Uint8Array(await new Response(cs.readable).arrayBuffer()));
+      }
+      return 'raw.' + u8ToB64u(enc);
+    }
+    async function decompressToken(tok) {
+      if (tok.startsWith('gz.') && typeof DecompressionStream !== 'undefined') {
+        const ds = new DecompressionStream('gzip'), w = ds.writable.getWriter(); w.write(b64uToU8(tok.slice(3))); w.close();
+        return new TextDecoder().decode(await new Response(ds.readable).arrayBuffer());
+      }
+      return new TextDecoder().decode(b64uToU8(tok.startsWith('raw.') ? tok.slice(4) : tok));
+    }
+    async function generateAndCopyShareLink() {
+      try {
+        const tok = await compressToken(JSON.stringify(state));
+        copyText(`${location.href.split('#')[0]}#gr63sync=${tok}`, '已複製同步連結！直接貼到 LINE 群組即可');
+      } catch { showToast('產生連結失敗，請改用 JSON 匯出'); }
+    }
+    async function checkIncomingSyncHash() {
+      if (!location.hash.startsWith('#gr63sync=')) return;
+      try {
+        const parsed = JSON.parse(await decompressToken(location.hash.slice(10)));
+        if (parsed?.lapStops) {
+          pendingLinkState = parsed;
+          document.getElementById('import-link-desc').textContent = `收到「${parsed.updatedBy||'旅伴'}」傳來的 5 天行程、雨備與 ${(parsed.expenses||[]).length} 筆分帳紀錄，確定套用嗎？`;
+          openModal('import-link-modal');
+        }
+      } catch { showToast('同步連結無效，已保留本機資料'); }
+    }
+    function dismissPendingLinkImport() {
+      pendingLinkState = null; history.replaceState(null, '', location.pathname + location.search); closeModal('import-link-modal');
+    }
+    function applyPendingLinkImport() {
+      if (pendingLinkState) { mergeState(pendingLinkState); saveState(true); rerenderAll(); showToast('已套用旅伴同步行程與分帳！'); }
+      dismissPendingLinkImport();
+    }
+    function exportStateJson() {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type:'application/json' }));
+      a.download = 'gr63-okinawa-2027-backup.json'; a.click(); showToast('已下載備份 JSON 檔');
+    }
+    function importStateJson(ev) {
+      const f = ev.target.files?.[0]; if (!f) return;
+      const r = new FileReader(); r.onload = e => {
+        try { mergeState(JSON.parse(e.target.result)); saveState(false); rerenderAll(); closeModal('cloud-sync-modal'); showToast('已還原備份檔案！'); }
+        catch { showToast('檔案格式錯誤'); }
+      }; r.readAsText(f); ev.target.value = '';
+    }
+
+    async function deriveKey(pass, salt) {
+      const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey({ name:'PBKDF2', salt, iterations:100000, hash:'SHA-256' }, base, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']);
+    }
+    async function sealPayload(obj, pass) {
+      if (!pass || !crypto?.subtle) return { encrypted:false, updatedAt:obj.updatedAt, data:obj };
+      const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+      const ct = await crypto.subtle.encrypt({ name:'AES-GCM', iv }, await deriveKey(pass, salt), new TextEncoder().encode(JSON.stringify(obj)));
+      return { encrypted:true, updatedAt:obj.updatedAt, salt:u8ToB64u(salt), iv:u8ToB64u(iv), ct:u8ToB64u(new Uint8Array(ct)) };
+    }
+    async function openPayload(env, pass) {
+      if (!env || typeof env !== 'object') return null;
+      if (!env.encrypted) return env.data || env;
+      if (!pass) throw new Error('NEED_PASS');
+      const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv:b64uToU8(env.iv) }, await deriveKey(pass, b64uToU8(env.salt)), b64uToU8(env.ct));
+      return JSON.parse(new TextDecoder().decode(pt));
+    }
+    function saveCloudSyncConfig() {
+      const provider = document.getElementById('sc-provider').value;
+      const url = document.getElementById('sc-url').value.trim().replace(/\/+$/,'');
+      const room = document.getElementById('sc-room').value.trim().replace(/[^a-zA-Z0-9_-]/g,'').slice(0,48);
+      const passcode = document.getElementById('sc-passcode').value;
+      const member = document.getElementById('sc-member').value.trim() || '我';
+      const autoSync = document.getElementById('sc-auto').checked;
+      if (url && !url.startsWith('https://')) return showToast('網址必須以 https:// 開頭');
+      if (url && !room) return showToast('請填寫房間代碼');
+      syncConfig = { provider, url, room, passcode, member, autoSync };
+      localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(syncConfig));
+      if (!state.companions.includes(member)) { state.companions.push(member); renderCompanionSelect(); }
+      updateCloudStatusUI(); setupCloudPolling(); showToast('雲端設定已儲存於本機');
+    }
+    async function cloudPushNow(v = true) {
+      if (!syncConfig.url || !syncConfig.room) return v && showToast('請先儲存雲端網址與房間代碼');
+      try {
+        const env = await sealPayload(state, syncConfig.passcode);
+        const res = syncConfig.provider === 'firebase'
+          ? await fetch(`${syncConfig.url}/gr63_rooms/${encodeURIComponent(syncConfig.room)}.json`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(env) })
+          : await fetch(syncConfig.url, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({ room:syncConfig.room, payload:env }) });
+        if (!res.ok) throw 0;
+        updateCloudStatusUI(); if (v) showToast(syncConfig.passcode ? '🔒 已加密推送至雲端' : '↑ 已推送至雲端');
+      } catch { if (v) showToast('雲端推送失敗，請確認網址與網路'); }
+    }
+    async function cloudPullNow(v = true) {
+      if (!syncConfig.url || !syncConfig.room) return v && showToast('請先儲存雲端網址與房間代碼');
+      try {
+        const ep = syncConfig.provider === 'firebase' ? `${syncConfig.url}/gr63_rooms/${encodeURIComponent(syncConfig.room)}.json` : `${syncConfig.url}?room=${encodeURIComponent(syncConfig.room)}`;
+        const res = await fetch(ep, { cache:'no-store' }); if (!res.ok) throw 0;
+        const env = await res.json();
+        if (!env || !Object.keys(env).length) return v && showToast('雲端房間尚無資料');
+        if (!v && env.updatedAt && env.updatedAt <= (state.updatedAt || 0)) return;
+        const data = await openPayload(env, syncConfig.passcode);
+        if (data?.lapStops) { mergeState(data); localStorage.setItem(STATE_KEY, JSON.stringify(state)); rerenderAll(); updateCloudStatusUI(); showToast(`↓ 已同步 ${state.updatedBy||'旅伴'} 的最新更新`); }
+      } catch (e) { if (v) showToast(e?.message==='NEED_PASS'||e?.name==='OperationError' ? '🔒 加密密碼錯誤，無法解密' : '拉取雲端失敗'); }
+    }
+    function setupCloudPolling() {
+      clearInterval(cloudPollTimer);
+      if (syncConfig.autoSync && syncConfig.url && syncConfig.room) cloudPollTimer = setInterval(() => cloudPullNow(false), 25000);
+    }
+
+    // --- 一鍵周邊搜 ---
+    function openNearbySearch(type, lat, lng, jpArea, name) {
+      const area = jpArea || name || '沖縄';
+      let url = '';
+      if (type === 'tabelog') {
+        url = `https://tabelog.com/tw/okinawa/rstLst/?SrtT=rt&Srt=D&sk=${encodeURIComponent(area)}`;
+      } else {
+        const kw = { restaurant:'美食 餐廳', conv:'便利商店 コンビニ', parking:'無料駐車場 停車場' }[type] || '餐廳';
+        url = (lat && lng) ? `https://www.google.com/maps/search/${encodeURIComponent(kw)}/@${lat},${lng},16z` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(area+' '+kw)}`;
+      }
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+    function nearbySearchFromGPS(type) {
+      if (!navigator.geolocation) return openNearbySearch(type, 26.2124, 127.6809, '那覇', '那霸');
+      showToast('定位目前 GPS 並開啟周邊搜...');
+      navigator.geolocation.getCurrentPosition(pos => {
+        const lat = +pos.coords.latitude.toFixed(5), lng = +pos.coords.longitude.toFixed(5);
+        if (type === 'tabelog') window.open(`https://tabelog.com/tw/okinawa/rstLst/?SrtT=rt&Srt=D&lat=${lat}&lon=${lng}`, '_blank', 'noopener,noreferrer');
+        else openNearbySearch(type, lat, lng, '沖縄', '目前位置');
+      }, () => {
+        const ref = (state.lapStops[activeLapId]||[])[0] || { lat:26.2124, lng:127.6809, jpArea:'那覇', name:'那霸' };
+        showToast('無法取得 GPS，改以本日景點周邊搜尋');
+        openNearbySearch(type, ref.lat, ref.lng, ref.jpArea, ref.name);
+      }, { enableHighAccuracy:true, timeout:6000 });
+    }
+
+    // --- 拖曳排序 + OSRM 實際道路估算 + 時間自動順延 ---
+    function cascadeTimes(lapId, startIdx = 0) {
+      const arr = state.lapStops[lapId] || []; if (!arr.length) return;
+      if (startIdx === 0) { arr[0].driveMin = 0; if (!arr[0].time) arr[0].time = (LAPS_META.find(l=>l.id===lapId)?.startTime) || '09:30'; }
+      for (let i = Math.max(1, startIdx); i < arr.length; i++) {
+        arr[i].time = toHHMM(toMins(arr[i-1].time) + (+arr[i-1].stayMin || 60) + (+arr[i].driveMin || 0));
+      }
+    }
+    async function recalcLapWithOSRM(notify = false) {
+      const arr = state.lapStops[activeLapId] || [];
+      if (arr.length < 2) return renderCircuitAndStops();
+      for (let i = 1; i < arr.length; i++) {
+        const k = `${arr[i-1].lat},${arr[i-1].lng}->${arr[i].lat},${arr[i].lng}`;
+        arr[i].driveMin = osrmLegCache.has(k) ? osrmLegCache.get(k) : estDrive(arr[i-1], arr[i]);
+      }
+      cascadeTimes(activeLapId, 0); saveState(); renderCircuitAndStops();
+
+      const badge = document.getElementById('route-engine-badge');
+      if (!arr.every(s => s.lat && s.lng)) { if (badge) badge.textContent = 'DIST EST.'; return; }
+      if (badge) badge.textContent = 'OSRM...';
+      try {
+        const coords = arr.map(s => `${(+s.lng).toFixed(5)},${(+s.lat).toFixed(5)}`).join(';');
+        const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=false`, { cache:'no-store' });
+        const data = await res.json();
+        const legs = data?.routes?.[0]?.legs;
+        if (legs?.length === arr.length - 1) {
+          legs.forEach((leg, i) => {
+            const mins = leg.duration < 60 ? 0 : Math.max(5, Math.round(leg.duration / 60));
+            arr[i+1].driveMin = mins;
+            osrmLegCache.set(`${arr[i].lat},${arr[i].lng}->${arr[i+1].lat},${arr[i+1].lng}`, mins);
+          });
+          cascadeTimes(activeLapId, 0); saveState(); renderCircuitAndStops();
+          if (badge) badge.textContent = 'OSRM ROAD';
+          if (notify) showToast('已透過 OSRM 重算實際道路車程與全天時間！');
+        }
+      } catch {
+        if (badge) badge.textContent = 'DIST EST.';
+        if (notify) showToast('已以距離公式完成時間估算');
+      }
+    }
+    function moveStopByOffset(i, d) {
+      const arr = state.lapStops[activeLapId] || [], t = i + d;
+      if (t < 0 || t >= arr.length) return;
+      const firstT = arr[0].time, [m] = arr.splice(i, 1); arr.splice(t, 0, m); arr[0].time = firstT;
+      recalcLapWithOSRM(false); showToast('已調整順序並自動重算時間');
+    }
+    function initSortable() {
+      const el = document.getElementById('timing-tower-list');
+      if (!el || typeof Sortable === 'undefined') return;
+      if (sortableInstance) { try { sortableInstance.destroy(); } catch {} }
+      sortableInstance = Sortable.create(el, {
+        handle: '.drag-handle', animation: 180, ghostClass: 'drag-ghost', chosenClass: 'drag-chosen',
+        onEnd: e => {
+          if (e.oldIndex === e.newIndex) return;
+          const arr = state.lapStops[activeLapId], firstT = arr[0]?.time || '09:30';
+          const [m] = arr.splice(e.oldIndex, 1); arr.splice(e.newIndex, 0, m);
+          if (arr[0]) arr[0].time = firstT;
+          recalcLapWithOSRM(true);
+        }
+      });
+    }
+
+    // 單站時間微調
+    function openTimeTuneModal(i) {
+      const s = (state.lapStops[activeLapId]||[])[i]; if (!s) return;
+      tuningStopIndex = i;
+      document.getElementById('tt-stop-name').textContent = `P${i+1} ${s.name}`;
+      document.getElementById('tt-arrival').value = s.time || '10:00';
+      const st = document.getElementById('tt-stay-label'); st.dataset.val = s.stayMin ?? 60; st.textContent = `${st.dataset.val} min`;
+      const dr = document.getElementById('tt-drive-row');
+      if (i === 0) dr.classList.add('hidden');
+      else { dr.classList.remove('hidden'); const dl = document.getElementById('tt-drive-label'); dl.dataset.val = s.driveMin ?? 15; dl.textContent = `${dl.dataset.val} min`; }
+      openModal('time-tune-modal');
+    }
+    function shiftTuneArrival(m) { const inp = document.getElementById('tt-arrival'); inp.value = toHHMM(toMins(inp.value) + m); }
+    function adjustTuneStay(d) { const el = document.getElementById('tt-stay-label'), n = Math.max(10, (+el.dataset.val||60)+d); el.dataset.val = n; el.textContent = `${n} min`; }
+    function adjustTuneDrive(d) { const el = document.getElementById('tt-drive-label'), n = Math.max(0, (+el.dataset.val||15)+d); el.dataset.val = n; el.textContent = `${n} min`; shiftTuneArrival(d); }
+    function saveTimeTuneModal() {
+      const s = (state.lapStops[activeLapId]||[])[tuningStopIndex]; if (!s) return closeModal('time-tune-modal');
+      s.time = document.getElementById('tt-arrival').value || s.time;
+      s.stayMin = +document.getElementById('tt-stay-label').dataset.val || 60;
+      if (tuningStopIndex > 0) s.driveMin = +document.getElementById('tt-drive-label').dataset.val || 0;
+      cascadeTimes(activeLapId, tuningStopIndex + 1); saveState(); renderCircuitAndStops(); closeModal('time-tune-modal');
+      showToast('已更新時間並自動順延後續站點');
+    }
+    function resetCurrentLapDefault() { state.lapStops[activeLapId] = deepClone(DEFAULT_LAP_STOPS[activeLapId]); saveState(); renderCircuitAndStops(); showToast(`已重設 LAP 0${activeLapId}`); }
+
+    // 候補雨備口袋名單
+    function togglePocketDrawer() {
+      const b = document.getElementById('pocket-drawer-body'), c = document.getElementById('pocket-chevron'), h = b.classList.contains('hidden');
+      b.classList.toggle('hidden', !h); c.style.transform = h ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+    function setPocketFilter(f) {
+      pocketFilter = f;
+      document.querySelectorAll('.pocket-filter-btn').forEach(b => {
+        b.className = b.dataset.pf === f ? 'pocket-filter-btn px-2 py-1 rounded-lg text-[10px] font-bold bg-petronas/20 border border-petronas/50 text-petronas' : 'pocket-filter-btn px-2 py-1 rounded-lg text-[10px] font-bold bg-obsidian border border-white/15 text-silverArrow';
+      });
+      renderPocketList();
+    }
+    function renderPocketList() {
+      const list = state.pocketStops || [];
+      document.getElementById('pocket-count-badge').textContent = list.length;
+      const items = list.filter(p => pocketFilter === 'ALL' || (p.tag || (p.cat==='RAIN BACKUP'?'RAIN':'FOOD')) === pocketFilter);
+      document.getElementById('pocket-list').innerHTML = items.length ? items.map(p => `
+        <div class="bg-obsidian/90 border border-white/10 rounded-xl p-3 space-y-2">
+          <div class="flex justify-between gap-2">
+            <div><div class="text-xs font-bold">${esc(p.name)}</div><p class="text-[11px] text-silverArrow/75 mt-0.5">${esc(p.note||'')}</p></div>
+            <button onclick="deletePocketStop('${p.id}')" class="text-silverArrow/50 hover:text-fiaRed">&times;</button>
+          </div>
+          <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+            <button onclick="insertPocketToLap('${p.id}')" class="py-1.5 rounded-lg bg-petronas/15 border border-petronas/50 text-petronas font-bold">+ 排入 LAP 0${activeLapId}</button>
+            <button onclick="openSwapPocketModal('${p.id}')" class="py-1.5 rounded-lg bg-volt/15 border border-volt/45 text-volt font-bold">⇄ 替換本日站點</button>
+          </div>
+        </div>`).join('') : `<div class="text-center py-3 text-xs text-silverArrow/55">此分類尚無候補景點</div>`;
+    }
+    function insertPocketToLap(id) {
+      const pk = state.pocketStops.find(p => p.id === id); if (!pk) return;
+      state.lapStops[activeLapId].push({ ...deepClone(pk), id:'stop-'+Date.now() });
+      recalcLapWithOSRM(true); showToast(`已排入「${pk.name}」`);
+    }
+    function moveStopToPocket(i) {
+      const arr = state.lapStops[activeLapId]; if (arr.length <= 1) return showToast('至少需保留 1 個站點');
+      const [r] = arr.splice(i, 1);
+      state.pocketStops.unshift({ ...r, id:'pk-'+Date.now(), tag:r.cat==='RAIN BACKUP'?'RAIN':'FOOD' });
+      renderPocketList(); recalcLapWithOSRM(false); showToast(`已移入候補：${r.name}`);
+    }
+    function openSwapPocketModal(id) {
+      const pk = state.pocketStops.find(p => p.id === id); if (!pk) return;
+      swapPocketId = id;
+      document.getElementById('swap-pocket-target-name').textContent = `以「${pk.name}」替換哪一站？`;
+      document.getElementById('swap-pocket-options').innerHTML = (state.lapStops[activeLapId]||[]).map((s,i) => `
+        <button onclick="confirmSwapPocket(${i})" class="w-full text-left bg-obsidian hover:bg-petronas/15 border border-white/15 rounded-xl px-3 py-2 flex justify-between items-center text-xs">
+          <span><b class="font-mono text-petronas mr-1">P${i+1} ${esc(s.time)}</b>${esc(s.name)}</span><span class="text-volt font-mono">替換 ⇄</span>
+        </button>`).join('');
+      openModal('swap-pocket-modal');
+    }
+    function confirmSwapPocket(idx) {
+      const pi = state.pocketStops.findIndex(p => p.id === swapPocketId), arr = state.lapStops[activeLapId];
+      if (pi < 0 || !arr[idx]) return closeModal('swap-pocket-modal');
+      const inc = { ...deepClone(state.pocketStops[pi]), id:'stop-'+Date.now(), time:arr[idx].time };
+      const out = { ...deepClone(arr[idx]), id:'pk-'+Date.now(), tag:arr[idx].cat==='RAIN BACKUP'?'RAIN':'FOOD' };
+      arr[idx] = inc; state.pocketStops.splice(pi, 1, out);
+      closeModal('swap-pocket-modal'); renderPocketList(); recalcLapWithOSRM(true);
+      showToast(`已替換為「${inc.name}」`);
+    }
+    function deletePocketStop(id) { state.pocketStops = state.pocketStops.filter(p => p.id !== id); saveState(); renderPocketList(); }
+
+    // --- 視覺素材本機上傳 (IndexedDB) ---
+    function openIDB() { return new Promise((res,rej) => { const r = indexedDB.open(IDB_NAME,1); r.onupgradeneeded = e => { if(!e.target.result.objectStoreNames.contains(IDB_STORE)) e.target.result.createObjectStore(IDB_STORE); }; r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); }
+    async function idbGet(k) { try { const db = await openIDB(); return await new Promise(res => { const r = db.transaction(IDB_STORE).objectStore(IDB_STORE).get(k); r.onsuccess = () => res(r.result||null); r.onerror = () => res(null); }); } catch { return null; } }
+    async function idbSet(k, v) { try { const db = await openIDB(); return await new Promise(res => { const tx = db.transaction(IDB_STORE,'readwrite'); tx.objectStore(IDB_STORE).put(v,k); tx.oncomplete = () => res(true); }); } catch { return false; } }
+    function applyAsset(k, url, lbl) {
+      if (!url) return;
+      if (k === 'heroCar') {
+        const im = document.getElementById('hero-car-img'); im.onload = () => { im.classList.replace('opacity-0','opacity-100'); document.getElementById('hero-car-skeleton').classList.add('opacity-0','pointer-events-none'); }; im.src = url;
+        document.getElementById('vs-car-preview').src = url; document.getElementById('vs-car-source').textContent = lbl;
+      } else {
+        document.querySelectorAll('.gr63-helmet-img').forEach(im => { im.onload = () => im.classList.replace('opacity-0','opacity-100'); im.src = url; });
+        document.querySelectorAll('.gr63-helmet-skeleton').forEach(s => s.classList.add('opacity-0','pointer-events-none'));
+        document.getElementById('vs-helmet-preview').src = url; document.getElementById('vs-helmet-source').textContent = lbl;
+      }
+    }
+    async function initAssets() {
+      for (const k of ['heroCar','helmetAvatar']) {
+        const c = await idbGet(k); if (c) applyAsset(k, c, 'SAVED');
+      }
+    }
+    function openVisualStudio() { openModal('visual-studio-modal'); }
+    function handleLocalImageUpload(ev, k) {
+      const f = ev.target.files?.[0]; if (!f) return;
+      const r = new FileReader(); r.onload = async e => { await idbSet(k, e.target.result); applyAsset(k, e.target.result, 'UPLOADED'); showToast('圖片已更新並永久儲存在本機！'); };
+      r.readAsDataURL(f); ev.target.value = '';
+    }
+
+    // --- 頂部 LED 與模式切換 ---
+    function initRpmBar() {
+      document.getElementById('rpm-led-bar').innerHTML = Array.from({length:15},()=>`<div class="rpm-led"></div>`).join('');
+      updateRpmLeds();
+    }
+    function updateRpmLeds() {
+      const lit = currentMode === 'steward' ? state.taxChecks.filter(Boolean).length * 3 : activeLapId * 3;
+      document.querySelectorAll('#rpm-led-bar .rpm-led').forEach((el, i) => {
+        el.className = 'rpm-led' + (i < lit ? (i<5 ? ' lit-green' : i<10 ? ' lit-red' : ' lit-blue') : '');
+      });
+    }
+    function switchMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-panel').forEach(p => p.classList.toggle('hidden', p.id !== `panel-${mode}`));
+      document.querySelectorAll('.wheel-btn').forEach(b => {
+        const a = b.dataset.mode === mode;
+        b.className = `wheel-btn flex flex-col items-center gap-1 py-2 ${a ? 'text-petronas' : 'text-silverArrow/55'}`;
+        b.querySelector('.mode-badge').className = a ? 'font-mono text-[9px] font-bold px-1.5 rounded bg-petronas/20 border border-petronas/60 text-petronas mode-badge' : 'font-mono text-[9px] font-bold px-1.5 rounded bg-carbon border border-white/10 mode-badge';
+      });
+      document.getElementById('hero-active-tag').textContent = mode==='timing' ? `LAP 0${activeLapId} / 05` : `M // ${mode.toUpperCase()}`;
+      updateRpmLeds(); window.scrollTo({ top:0, behavior:'smooth' });
+    }
+    const scrollToTopHub = () => { window.scrollTo({ top:0, behavior:'smooth' }); showToast('GR63 // OKINAWA GP 2027'); };
+
+    // --- M1 渲染 ---
+    function renderLapPills() {
+      document.getElementById('lap-pills').innerHTML = LAPS_META.map(l => `
+        <button onclick="selectLap(${l.id})" class="flex-shrink-0 px-3 py-2 rounded-xl border text-left active:scale-95 ${l.id===activeLapId ? 'bg-petronas/15 border-petronas text-white shadow-tealGlowSm' : 'bg-carbon/90 border-white/10 text-silverArrow/70'}">
+          <div class="font-racing italic font-bold text-xs ${l.id===activeLapId?'text-petronas':''}">${l.code}</div>
+          <div class="text-[11px] whitespace-nowrap">${esc(l.short)}</div>
+        </button>`).join('');
+    }
+    function selectLap(id) { activeLapId = id; renderLapPills(); renderCircuitAndStops(); renderPocketList(); updateRpmLeds(); if(currentMode==='timing') document.getElementById('hero-active-tag').textContent = `LAP 0${id} / 05`; }
+    const stopParam = s => (s.lat && s.lng) ? `${s.lat},${s.lng}` : encodeURIComponent(s.query || `${s.name} 沖繩`);
+    function buildCarPlayUrl(arr) {
+      if (!arr.length) return 'https://www.google.com/maps';
+      if (arr.length === 1) return `https://www.google.com/maps/dir/?api=1&destination=${stopParam(arr[0])}&travelmode=driving`;
+      let u = `https://www.google.com/maps/dir/?api=1&origin=${stopParam(arr[0])}&destination=${stopParam(arr[arr.length-1])}&travelmode=driving`;
+      if (arr.length > 2) u += `&waypoints=${arr.slice(1,-1).map(stopParam).join('|')}`;
+      return u;
+    }
+    const tireSvg = c => { const col = {S:'#FF2A3B',M:'#FFD100',H:'#E2E8F0',I:'#22C55E'}[c]||'#FFD100'; return `<svg viewBox="0 0 28 28" class="w-5 h-5 flex-shrink-0"><circle cx="14" cy="14" r="11" fill="none" stroke="${col}" stroke-width="2.5" stroke-dasharray="13 4"/><text x="14" y="17.5" text-anchor="middle" fill="${col}" font-family="Chakra Petch" font-size="11" font-weight="700">${c||'M'}</text></svg>`; };
+
+    function renderCircuitAndStops() {
+      const lap = LAPS_META.find(l => l.id === activeLapId) || LAPS_META[0], arr = state.lapStops[activeLapId] || [];
+      document.getElementById('track-s1').setAttribute('opacity', lap.sector===1?'1':'0.3');
+      document.getElementById('track-s2').setAttribute('opacity', lap.sector===2?'1':'0.3');
+      document.getElementById('track-s3').setAttribute('opacity', lap.sector===3?'1':'0.3');
+      document.getElementById('circuit-gr63-dot').setAttribute('transform', `translate(${lap.dotPos.x},${lap.dotPos.y})`);
+      document.getElementById('circuit-sector-badge').textContent = lap.sectorName;
+      document.getElementById('lap-code-sub').textContent = `${lap.code} // DAY ${lap.id}`;
+      document.getElementById('lap-full-title').textContent = lap.title;
+      document.getElementById('lap-stop-count').textContent = arr.length;
+      document.getElementById('lap-drive-total').textContent = fmtDur(arr.reduce((sum,s,i)=>sum+(i?+s.driveMin||0:0),0));
+      document.getElementById('btn-carplay-route').href = buildCarPlayUrl(arr);
+
+      document.getElementById('timing-tower-list').innerHTML = arr.map((s, idx) => {
+        const dest = stopParam(s), gmap = `https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=driving`;
+        const amap = (s.lat&&s.lng) ? `https://maps.apple.com/?daddr=${s.lat},${s.lng}&dirflg=d` : `https://maps.apple.com/?daddr=${encodeURIComponent(s.query||s.name)}&dirflg=d`;
+        const jpA = esc(s.jpArea||s.name).replace(/'/g,''), nmS = esc(s.name).replace(/'/g,'');
+        return `
+        <article class="f1-panel carbon-weave p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between gap-1.5">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="drag-handle touch-none cursor-grab inline-flex items-center justify-center w-6 h-6 rounded bg-obsidian border border-white/15 text-silverArrow select-none">≡</span>
+              <span class="font-racing italic font-bold text-xs text-obsidian bg-petronas px-1.5 py-0.5 rounded">P${idx+1}</span>
+              <button onclick="openTimeTuneModal(${idx})" class="bg-obsidian border border-petronas/35 rounded-lg px-2 py-0.5 text-xs font-mono font-bold text-white active:scale-95">${esc(s.time)} <span class="text-[9px] text-silverArrow/70">停${s.stayMin||60}m</span></button>
+              ${tireSvg(s.tire)}
+              <span class="font-mono text-[10px] text-volt font-bold">${idx===0?'START':`+${s.driveMin||0}m`}</span>
+            </div>
+            <div class="flex gap-1">
+              <button onclick="moveStopByOffset(${idx},-1)" ${idx===0?'disabled':''} class="w-5 h-5 rounded bg-obsidian border border-white/10 text-[9px] disabled:opacity-25">▲</button>
+              <button onclick="moveStopByOffset(${idx},1)" ${idx===arr.length-1?'disabled':''} class="w-5 h-5 rounded bg-obsidian border border-white/10 text-[9px] disabled:opacity-25">▼</button>
+            </div>
+          </div>
+          <div class="flex justify-between items-start gap-2">
+            <div><h3 class="text-[15px] font-bold leading-snug">${esc(s.name)}</h3>${s.note?`<p class="text-xs text-silverArrow/80 mt-0.5">${esc(s.note)}</p>`:''}</div>
+            <button onclick="moveStopToPocket(${idx})" class="flex-shrink-0 text-[10px] font-mono text-silverArrow hover:text-volt bg-obsidian border border-white/10 px-1.5 py-1 rounded-lg">移候補</button>
+          </div>
+          ${(s.mapcode||s.tel)?`<div class="flex flex-wrap gap-1.5">
+            ${s.mapcode?`<button onclick="copyText('${esc(s.mapcode)}','已複製 Mapcode')" class="bg-obsidian border border-white/15 rounded-lg px-2 py-1 text-[11px] font-mono text-petronas">MC ${esc(s.mapcode)} ⧉</button>`:''}
+            ${s.tel?`<button onclick="copyText('${esc(s.tel)}','已複製電話')" class="bg-obsidian border border-white/15 rounded-lg px-2 py-1 text-[11px] font-mono">TEL ${esc(s.tel)} ⧉</button>`:''}
+          </div>`:''}
+          <div class="grid grid-cols-4 gap-1.5">
+            <button onclick="openNearbySearch('restaurant',${s.lat??'null'},${s.lng??'null'},'${jpA}','${nmS}')" class="py-1.5 rounded-lg bg-obsidian border border-white/10 text-[10px] active:scale-95">🍜 餐廳</button>
+            <button onclick="openNearbySearch('tabelog',${s.lat??'null'},${s.lng??'null'},'${jpA}','${nmS}')" class="py-1.5 rounded-lg bg-obsidian border border-white/10 text-[10px] text-sectorYellow active:scale-95">🍽️ Tabelog</button>
+            <button onclick="openNearbySearch('conv',${s.lat??'null'},${s.lng??'null'},'${jpA}','${nmS}')" class="py-1.5 rounded-lg bg-obsidian border border-white/10 text-[10px] active:scale-95">🏪 超商</button>
+            <button onclick="openNearbySearch('parking',${s.lat??'null'},${s.lng??'null'},'${jpA}','${nmS}')" class="py-1.5 rounded-lg bg-obsidian border border-white/10 text-[10px] text-petronas active:scale-95">🅿️ 停車</button>
+          </div>
+          <div class="grid grid-cols-3 gap-2 pt-2 border-t border-white/10">
+            <a href="${gmap}" target="_blank" rel="noopener noreferrer" class="col-span-2 text-center bg-petronas/15 border border-petronas/50 text-petronas font-bold text-xs py-2 rounded-xl">Google Maps (CarPlay)</a>
+            <a href="${amap}" target="_blank" rel="noopener noreferrer" class="col-span-1 text-center bg-obsidian border border-white/15 text-silverArrow text-xs py-2 rounded-xl">Apple</a>
+          </div>
+        </article>`;
+      }).join('');
+      initSortable();
+    }
+
+    function openAddStopModal(t='lap') {
+      addStopTarget = t;
+      document.getElementById('add-stop-lap-tag').textContent = t==='pocket' ? '候補口袋名單' : `LAP 0${activeLapId}`;
+      ['ns-name','ns-mapcode','ns-tel','ns-query','ns-note'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('ns-stay').value = '60'; openModal('add-stop-modal');
+    }
+    function confirmAddStop() {
+      const name = document.getElementById('ns-name').value.trim(); if (!name) return showToast('請填寫名稱');
+      const qRaw = document.getElementById('ns-query').value.trim(), m = qRaw.match(/^(-?\d+(\.\d+)?)\s*,\s*(-?\d+(\.\d+)?)$/);
+      const cat = document.getElementById('ns-cat').value;
+      const stop = {
+        id: (addStopTarget==='pocket'?'pk-':'custom-') + Date.now(), time:'15:00', stayMin: +document.getElementById('ns-stay').value || 60, driveMin: 20,
+        cat, tag: cat==='RAIN BACKUP'?'RAIN':'FOOD', tire: document.getElementById('ns-tire').value, name, jpArea: name,
+        lat: m ? +m[1] : null, lng: m ? +m[3] : null, query: qRaw || `${name} 沖繩`,
+        mapcode: document.getElementById('ns-mapcode').value.trim(), tel: document.getElementById('ns-tel').value.trim(), note: document.getElementById('ns-note').value.trim()
+      };
+      closeModal('add-stop-modal');
+      if (addStopTarget === 'pocket') { state.pocketStops.unshift(stop); saveState(); renderPocketList(); showToast(`已新增至候補：${name}`); }
+      else { state.lapStops[activeLapId].push(stop); recalcLapWithOSRM(true); showToast(`已新增至 LAP 0${activeLapId}`); }
+    }
+
+    // --- M2 氣象、匯率、共同分帳 ---
+    const degDir = d => ['N','NE','E','SE','S','SW','W','NW'][Math.round((((d%360)+360)%360)/45)%8];
+    const wCode = c => c===0?{i:'☀️',t:'晴朗'}:c<=3?{i:'⛅',t:'多雲'}:c<=48?{i:'🌫️',t:'微霧'}:c<=67?{i:'🌧️',t:'陣雨'}:{i:'🌦️',t:'驟雨'};
+    function renderWeather(w, live) {
+      const ms = +w.windMs, dir = Math.round(w.windDeg||45), dt = degDir(dir), c = wCode(w.weatherCode||1);
+      document.getElementById('hero-temp').textContent = `${w.temp}°C`;
+      document.getElementById('hero-wind').textContent = `${ms.toFixed(1)} m/s`;
+      document.getElementById('weather-source-tag').textContent = live ? 'LIVE OPEN-METEO' : 'CACHED';
+      document.getElementById('w-temp').textContent = `${w.temp}°C`;
+      document.getElementById('w-feels').textContent = `${w.feels}°`;
+      document.getElementById('w-wind-ms').textContent = `${ms.toFixed(1)} m/s`;
+      document.getElementById('w-wind-kmh').textContent = `${(ms*3.6).toFixed(1)} km/h`;
+      document.getElementById('w-rain').textContent = `${w.rainProb}%`;
+      document.getElementById('w-condition').textContent = `${c.i} ${c.t}`;
+      document.getElementById('w-range').textContent = `${w.minT}°/${w.maxT}°`;
+      document.getElementById('w-wind-deg').textContent = `${dir}°`;
+      document.getElementById('w-wind-dir-label').textContent = dt;
+      document.getElementById('wind-compass-needle').setAttribute('transform', `rotate(${dir} 60 60)`);
+      document.getElementById('pit-advice-text').textContent = ms>=8 ? `強季風(${dt} ${ms.toFixed(1)}m/s)！海邊務必穿防風衝鋒外套並收妥帽子。` : ms>=4.5 ? `沖繩東北季風(${dt} ${ms.toFixed(1)}m/s)，建議車內薄長袖＋下車套防風外套。` : `賽道氣候穩定(${dt} ${ms.toFixed(1)}m/s)，體感舒適 ${w.feels}°C。`;
+      document.getElementById('weather-5day-grid').innerHTML = (w.forecast||[]).slice(0,5).map(d => `<div class="bg-obsidian/90 border border-white/10 rounded-xl py-2 text-center"><div class="font-mono text-[9px] text-silverArrow/70">${esc(d.date)}</div><div>${wCode(d.code).i}</div><div class="font-mono text-[10px] font-bold">${d.max}°/${d.min}°</div><div class="font-mono text-[9px] text-petronas">${d.rain}%</div></div>`).join('');
+    }
+    async function fetchWeather() {
+      try {
+        const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=26.2124&longitude=127.6809&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&wind_speed_unit=ms&timezone=Asia%2FTokyo', { cache:'no-store' });
+        const d = await res.json();
+        const forecast = d.daily.time.slice(0,5).map((s,i)=>({ date:s.slice(5).replace('-','/'), code:d.daily.weather_code[i], max:Math.round(d.daily.temperature_2m_max[i]), min:Math.round(d.daily.temperature_2m_min[i]), rain:d.daily.precipitation_probability_max[i]??10 }));
+        const p = { temp:d.current.temperature_2m.toFixed(1), feels:d.current.apparent_temperature.toFixed(1), windMs:d.current.wind_speed_10m, windDeg:d.current.wind_direction_10m, weatherCode:d.current.weather_code, rainProb:forecast[0].rain, maxT:forecast[0].max, minT:forecast[0].min, forecast, at:new Date().toLocaleTimeString('zh-TW',{hour12:false}) };
+        localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(p)); renderWeather(p, true);
+        document.getElementById('net-last-sync').textContent = p.at; return true;
+      } catch {
+        const fb = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null') || { temp:'18.4', feels:'16.0', windMs:6.2, windDeg:35, weatherCode:2, rainProb:20, maxT:20, minT:15, forecast:[{date:'01/15',code:2,max:20,min:15,rain:20},{date:'01/16',code:1,max:19,min:14,rain:10},{date:'01/17',code:3,max:18,min:14,rain:30},{date:'01/18',code:1,max:20,min:15,rain:15},{date:'01/19',code:0,max:21,min:16,rain:10}] };
+        renderWeather(fb, false); return false;
+      }
+    }
+    async function fetchFx(force=false) {
+      if (state.fxManual && !force) { document.getElementById('fx-rate-input').value = state.fxRate; document.getElementById('hero-fx').textContent = state.fxRate; return true; }
+      try {
+        const d = await (await fetch('https://open.er-api.com/v6/latest/JPY', { cache:'no-store' })).json();
+        const r = d?.rates?.TWD ? +d.rates.TWD.toFixed(4) : state.fxRate;
+        state.fxRate = r; state.fxManual = false; saveState(true); localStorage.setItem(FX_CACHE_KEY, r);
+        document.getElementById('fx-rate-input').value = r; document.getElementById('hero-fx').textContent = r; document.getElementById('fx-source-tag').textContent = 'ER-API LIVE';
+        convertFromJpy(); renderExpenses(); return true;
+      } catch {
+        const r = +localStorage.getItem(FX_CACHE_KEY) || state.fxRate || 0.215; state.fxRate = r;
+        document.getElementById('fx-rate-input').value = r; document.getElementById('hero-fx').textContent = r; document.getElementById('fx-source-tag').textContent = 'CACHED';
+        convertFromJpy(); renderExpenses(); return false;
+      }
+    }
+    async function forceTelemetrySync() { showToast('同步即時氣象與匯率...'); await Promise.all([fetchWeather(), fetchFx(true)]); showToast('遙測同步完成！'); }
+    function onFxRateManualEdit() { const v = +document.getElementById('fx-rate-input').value; if (v > 0) { state.fxRate = v; state.fxManual = true; saveState(); document.getElementById('hero-fx').textContent = v; convertFromJpy(); renderExpenses(); } }
+    function resetFxToLive() { state.fxManual = false; fetchFx(true).then(()=>showToast(`已重抓匯率 ${state.fxRate}`)); }
+    function convertFromJpy() { const v = document.getElementById('calc-jpy').value; document.getElementById('calc-twd').value = v==='' ? '' : Math.round(+v * state.fxRate); }
+    function convertFromTwd() { const v = document.getElementById('calc-twd').value; document.getElementById('calc-jpy').value = v==='' ? '' : Math.round(+v / state.fxRate); }
+    function setQuickJpy(a) { document.getElementById('calc-jpy').value = a || ''; convertFromJpy(); }
+    function bringCalcToExpense() { const v = +document.getElementById('calc-jpy').value; if (!v) return showToast('請先輸入日圓'); document.getElementById('exp-item-jpy').value = v; if (v>=5500) document.getElementById('exp-item-taxfree').checked = true; }
+
+    function renderCompanionSelect() {
+      const sel = document.getElementById('exp-item-payer'), list = state.companions.length ? state.companions : ['我','旅伴A'];
+      sel.innerHTML = list.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+      if (syncConfig.member && list.includes(syncConfig.member)) sel.value = syncConfig.member;
+    }
+    function editCompanionsPrompt() {
+      const inp = prompt('請輸入旅伴名稱（逗號分隔，例：我, 旅伴A, 旅伴B）：', state.companions.join(', '));
+      if (inp === null) return;
+      const arr = Array.from(new Set(inp.split(/[,，、]+/).map(s=>s.trim()).filter(Boolean)));
+      if (!arr.length) return;
+      state.companions = arr; saveState(); renderCompanionSelect(); renderExpenses(); showToast(`已更新旅伴名單 (${arr.length} 人)`);
+    }
+    function addExpenseItem() {
+      const jpy = +document.getElementById('exp-item-jpy').value; if (!jpy || jpy <= 0) return showToast('請輸入日圓金額');
+      const item = {
+        id: 'exp-'+Date.now(), name: document.getElementById('exp-item-name').value.trim() || '沖繩消費',
+        jpy: Math.round(jpy), payer: document.getElementById('exp-item-payer').value || '我',
+        taxFree: document.getElementById('exp-item-taxfree').checked,
+        time: new Date().toLocaleString('zh-TW', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false })
+      };
+      state.expenses.unshift(item); saveState();
+      document.getElementById('exp-item-name').value = ''; document.getElementById('exp-item-jpy').value = ''; document.getElementById('exp-item-taxfree').checked = false;
+      renderExpenses(); showToast(`已記帳 (${item.payer}) ¥${item.jpy.toLocaleString()}`);
+    }
+    function deleteExpenseItem(id) { state.expenses = state.expenses.filter(e => e.id !== id); saveState(); renderExpenses(); }
+    function renderExpenses() {
+      const r = state.fxRate || 0.215, tot = state.expenses.reduce((s,e)=>s+e.jpy, 0), tax = state.expenses.filter(e=>e.taxFree), taxJ = tax.reduce((s,e)=>s+e.jpy,0);
+      document.getElementById('exp-total-jpy').textContent = `¥${tot.toLocaleString()}`;
+      document.getElementById('exp-total-twd').textContent = `≈ NT$ ${Math.round(tot*r).toLocaleString()}`;
+      document.getElementById('exp-tax-count').textContent = `${tax.length} 筆`;
+      document.getElementById('exp-tax-jpy').textContent = `¥${taxJ.toLocaleString()}`;
+      document.getElementById('exp-tax-twd').textContent = `≈ NT$ ${Math.round(taxJ*r).toLocaleString()}`;
+
+      const members = Array.from(new Set([...state.companions, ...state.expenses.map(e=>e.payer).filter(Boolean)]));
+      const box = document.getElementById('split-bill-box');
+      if (state.expenses.length && members.length > 1) {
+        const share = tot / members.length, paid = {}; members.forEach(m => paid[m] = 0);
+        state.expenses.forEach(e => { const p = e.payer || members[0]; paid[p] = (paid[p]||0) + e.jpy; });
+        box.classList.remove('hidden');
+        document.getElementById('split-per-person').textContent = `每人 ¥${Math.round(share).toLocaleString()} (NT$${Math.round(share*r).toLocaleString()})`;
+        document.getElementById('split-details').innerHTML = members.map(m => {
+          const d = Math.round(paid[m] - share), dt = Math.round(Math.abs(d)*r);
+          return `<div class="flex justify-between py-0.5 border-b border-white/5 last:border-0"><span>${esc(m)} (付¥${paid[m].toLocaleString()})</span>${d>0?`<span class="text-petronas font-bold">收 +¥${d.toLocaleString()} (NT$${dt})</span>`:d<0?`<span class="text-sectorYellow font-bold">付 -¥${Math.abs(d).toLocaleString()} (NT$${dt})</span>`:'<span>結清</span>'}</div>`;
+        }).join('');
+      } else box.classList.add('hidden');
+
+      document.getElementById('expense-list').innerHTML = state.expenses.length ? state.expenses.map(e => `
+        <div class="bg-obsidian/90 border border-white/10 rounded-xl px-3 py-2 flex justify-between items-center gap-2">
+          <div class="min-w-0">
+            <div class="flex items-center gap-1.5 flex-wrap"><span class="text-xs font-bold truncate">${esc(e.name)}</span><span class="font-mono text-[9px] px-1.5 rounded bg-carbonLight text-volt border border-volt/30">${esc(e.payer||'我')}</span>${e.taxFree?'<span class="font-mono text-[9px] px-1.5 rounded bg-petronas/15 text-petronas">TAX</span>':''}</div>
+            <div class="font-mono text-[10px] text-silverArrow/55">${esc(e.time)}</div>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0"><div class="text-right font-mono"><div class="text-xs font-bold">¥${e.jpy.toLocaleString()}</div><div class="text-[10px] text-silverArrow/70">NT$${Math.round(e.jpy*r).toLocaleString()}</div></div><button onclick="deleteExpenseItem('${e.id}')" class="text-silverArrow/50 hover:text-fiaRed">&times;</button></div>
+        </div>`).join('') : `<div class="text-center py-3 text-xs text-silverArrow/50">尚無消費紀錄</div>`;
+    }
+
+    // --- M3 PIT WALL ---
+    function launchInstantNav(p) {
+      const q = document.getElementById('pit-quick-dest').value.trim(); if (!q) return showToast('請輸入目的地');
+      window.open(p==='apple' ? `https://maps.apple.com/?daddr=${encodeURIComponent(q)}&dirflg=d` : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(q)}&travelmode=driving`, '_blank', 'noopener,noreferrer');
+    }
+    function saveParkingPin(gps) {
+      const zone = document.getElementById('park-zone-input').value.trim()||'PARC FERMÉ', memo = document.getElementById('park-memo-input').value.trim()||'停車位置';
+      const time = new Date().toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+      if (!gps || !navigator.geolocation) { state.parking = { zone, memo, lat:null, lng:null, time }; saveState(); renderParkingPin(); return showToast('已儲存車格備忘'); }
+      navigator.geolocation.getCurrentPosition(pos => {
+        state.parking = { zone, memo, lat:+pos.coords.latitude.toFixed(6), lng:+pos.coords.longitude.toFixed(6), time };
+        saveState(); renderParkingPin(); showToast('已鎖定停車 GPS！');
+      }, () => { state.parking = { zone, memo, lat:null, lng:null, time }; saveState(); renderParkingPin(); showToast('無法取得 GPS，改存備忘'); });
+    }
+    function renderParkingPin() {
+      const c = document.getElementById('parking-pin-card'), p = state.parking;
+      if (!p) return c.classList.add('hidden');
+      c.classList.remove('hidden');
+      document.getElementById('park-display-time').textContent = p.time;
+      document.getElementById('park-display-zone').textContent = p.zone;
+      document.getElementById('park-display-memo').textContent = p.memo;
+      document.getElementById('park-display-coords').textContent = p.lat ? `GPS: ${p.lat}, ${p.lng}` : '文字備忘模式';
+      document.getElementById('park-walk-link').href = p.lat ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=walking` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.memo+' 沖繩')}`;
+    }
+    function clearParkingPin() { state.parking = null; saveState(); renderParkingPin(); }
+
+    function renderTeamRadioList() {
+      document.getElementById('team-radio-list').innerHTML = ['box','return','hotel'].map(k => {
+        const c = TEAM_RADIO[k];
+        return `<button onclick="openTeamRadioModal('${k}')" class="w-full text-left f1-panel carbon-weave p-3 flex items-center justify-between gap-2 active:scale-[0.99]">
+          <div class="min-w-0"><div class="font-racing italic font-bold text-xs text-petronas">${c.tag}</div><div class="text-sm font-bold truncate mt-0.5">${c.jpMain}</div><div class="text-[11px] text-silverArrow/75 truncate">${c.zh}</div></div>
+          <div class="flex items-end gap-[2px] h-5 flex-shrink-0"><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span><span class="wave-bar"></span></div>
+        </button>`;
+      }).join('');
+    }
+    function openTeamRadioModal(k) {
+      const c = TEAM_RADIO[k]; if (!c) return;
+      document.getElementById('tr-modal-tag').textContent = c.tag;
+      document.getElementById('tr-modal-jp-main').textContent = c.jpMain;
+      document.getElementById('tr-modal-jp-sub').textContent = c.jpSub || '';
+      document.getElementById('tr-modal-zh').textContent = c.zh;
+      document.getElementById('tr-modal-romaji').textContent = c.romaji;
+      openModal('team-radio-modal');
+    }
+    function renderRentalEmergency() {
+      document.getElementById('rental-tel-name').textContent = state.rentalEmergency.name;
+      document.getElementById('rental-tel-num').textContent = state.rentalEmergency.phone;
+      document.getElementById('rental-tel-call').href = `tel:${state.rentalEmergency.phone.replace(/[^+\d]/g,'')}`;
+      document.getElementById('input-rental-name').value = state.rentalEmergency.name;
+      document.getElementById('input-rental-phone').value = state.rentalEmergency.phone;
+    }
+    function toggleRentalTelEdit() {
+      const e = document.getElementById('rental-tel-edit'), v = document.getElementById('rental-tel-view'), o = e.classList.contains('hidden');
+      e.classList.toggle('hidden', !o); v.classList.toggle('hidden', o);
+      document.getElementById('btn-edit-rental-tel').textContent = o ? '取消' : '編輯';
+    }
+    function saveRentalTel() {
+      state.rentalEmergency.name = document.getElementById('input-rental-name').value.trim() || state.rentalEmergency.name;
+      state.rentalEmergency.phone = document.getElementById('input-rental-phone').value.trim() || state.rentalEmergency.phone;
+      saveState(); renderRentalEmergency(); toggleRentalTelEdit(); showToast('已儲存救援電話');
+    }
+
+    // --- M4 STEWARD ---
+    function renderFlightPanel() {
+      const f = state.flight;
+      ['outCode','outDetail','inCode','inDetail','rentalAgency','rentalRef','shuttle'].forEach(k => {
+        const idMap = { outCode:'out-code', outDetail:'out-detail', inCode:'in-code', inDetail:'in-detail', rentalAgency:'rental-agency', rentalRef:'rental-ref', shuttle:'shuttle' };
+        document.getElementById('fv-'+idMap[k]).textContent = f[k];
+        document.getElementById('fe-'+idMap[k]).value = f[k];
+      });
+    }
+    function toggleFlightEdit() {
+      const e = document.getElementById('flight-edit'), v = document.getElementById('flight-view'), o = e.classList.contains('hidden');
+      e.classList.toggle('hidden', !o); v.classList.toggle('hidden', o);
+      document.getElementById('btn-edit-flight').textContent = o ? '取消' : '編輯情報';
+    }
+    function saveFlightDetails() {
+      state.flight = {
+        outCode: document.getElementById('fe-out-code').value.trim()||'待補', outDetail: document.getElementById('fe-out-detail').value.trim()||'待補',
+        inCode: document.getElementById('fe-in-code').value.trim()||'待補', inDetail: document.getElementById('fe-in-detail').value.trim()||'待補',
+        rentalAgency: document.getElementById('fe-rental-agency').value.trim()||'待補', rentalRef: document.getElementById('fe-rental-ref').value.trim()||'待補',
+        shuttle: document.getElementById('fe-shuttle').value.trim()||'待補'
+      };
+      saveState(); renderFlightPanel(); toggleFlightEdit(); showToast('已儲存航班情報');
+    }
+    function renderStewardTax() {
+      const cnt = state.taxChecks.filter(Boolean).length, done = cnt === 5;
+      document.getElementById('fia-gantry-lights').innerHTML = [0,1,2,3,4].map(i => `<div class="flex flex-col items-center gap-1 bg-[#121619] border border-white/10 rounded-xl py-2 w-full"><div class="gantry-light ${done?'green-on':i<cnt?'red-on':''}"></div><span class="font-mono text-[9px] text-silverArrow/60">L${i+1}</span></div>`).join('');
+      document.getElementById('steward-progress-pill').textContent = `${cnt}/5`;
+      document.getElementById('steward-flag-title').textContent = done ? 'GREEN LIGHT // CLEAR TO CHECK-IN' : 'YELLOW FLAG // HOLD LUGGAGE';
+      document.getElementById('steward-flag-sub').textContent = done ? '退稅查驗全部通過！可前往櫃檯託運行李' : '切勿先託運行李！請先完成 2026/11 新制退稅查驗';
+      document.getElementById('steward-flag-banner').className = done ? 'px-4 py-3 bg-petronas/20 border-b border-petronas/60 flex items-center justify-between gap-2' : 'px-4 py-3 bg-sectorYellow/15 border-b border-sectorYellow/40 flex items-center justify-between gap-2';
+      document.getElementById('steward-tax-list').innerHTML = TAX_SOP_ITEMS.map((t,i) => `<label class="flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer ${state.taxChecks[i]?'bg-petronas/10 border-petronas/50 text-white':'bg-obsidian/90 border-white/10 text-silverArrow'}"><input type="checkbox" ${state.taxChecks[i]?'checked':''} onchange="toggleTaxCheck(${i})" class="mt-0.5 w-4 h-4 accent-[#00D2BE]" /><span class="text-xs ${state.taxChecks[i]?'line-through opacity-75':''}">0${i+1}. ${esc(t)}</span></label>`).join('');
+      updateRpmLeds();
+    }
+    function toggleTaxCheck(i) { state.taxChecks[i] = !state.taxChecks[i]; saveState(); renderStewardTax(); }
+    function resetTaxChecklist() { state.taxChecks = [false,false,false,false,false]; saveState(); renderStewardTax(); }
+
+    function rerenderAll() {
+      renderLapPills(); renderCircuitAndStops(); renderPocketList(); renderCompanionSelect();
+      renderExpenses(); renderParkingPin(); renderTeamRadioList(); renderRentalEmergency();
+      renderFlightPanel(); renderStewardTax(); updateCloudStatusUI();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState(); initRpmBar(); rerenderAll(); setupCloudPolling();
+      checkIncomingSyncHash(); window.addEventListener('hashchange', checkIncomingSyncHash);
+      document.getElementById('pit-quick-dest')?.addEventListener('keydown', e => { if (e.key === 'Enter') launchInstantNav('google'); });
+      initAssets(); fetchWeather(); fetchFx(false);
+    });
+  </script>
+</body>
+</html>
+```
